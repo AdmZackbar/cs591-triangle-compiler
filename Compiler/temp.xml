@@ -1,0 +1,594 @@
+<treenode text="PROGRAM">
+  <treenode text="LETCOMMAND">
+    <treenode text="SEQUENTIALDECLARATION">
+      <treenode text="SEQUENTIALDECLARATION">
+        <treenode text="SEQUENTIALDECLARATION">
+          <treenode text="VARDECLARATION">
+            <treenode text="IDENTIFIER">
+              <treenode text="j">
+              </treenode>
+            </treenode>
+            <treenode text="INTTYPEDENOTER">
+            </treenode>
+          </treenode>
+          <treenode text="VARDECLARATION">
+            <treenode text="IDENTIFIER">
+              <treenode text="k">
+              </treenode>
+            </treenode>
+            <treenode text="INTTYPEDENOTER">
+            </treenode>
+          </treenode>
+        </treenode>
+        <treenode text="VARDECLARATION">
+          <treenode text="IDENTIFIER">
+            <treenode text="t">
+            </treenode>
+          </treenode>
+          <treenode text="INTTYPEDENOTER">
+          </treenode>
+        </treenode>
+      </treenode>
+      <treenode text="VARDECLARATION">
+        <treenode text="IDENTIFIER">
+          <treenode text="A">
+          </treenode>
+        </treenode>
+        <treenode text="ARRAYTYPEDENOTER">
+          <treenode text="INTTYPEDENOTER">
+          </treenode>
+        </treenode>
+      </treenode>
+    </treenode>
+    <treenode text="SEQUENTIALCOMMAND">
+      <treenode text="SEQUENTIALCOMMAND">
+        <treenode text="SEQUENTIALCOMMAND">
+          <treenode text="SEQUENTIALCOMMAND">
+            <treenode text="SEQUENTIALCOMMAND">
+              <treenode text="ASSIGNCOMMAND">
+                <treenode text="SIMPLEVNAME">
+                  <treenode text="IDENTIFIER">
+                    <treenode text="j">
+                    </treenode>
+                  </treenode>
+                </treenode>
+                <treenode text="INTEGEREXPRESSION">
+                  <treenode text="INTEGERLITERAL">
+                    <treenode text="0">
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+              <treenode text="WHILECOMMAND">
+                <treenode text="BINARYEXPRESSION">
+                  <treenode text="VNAMEEXPRESSION">
+                    <treenode text="SIMPLEVNAME">
+                      <treenode text="IDENTIFIER">
+                        <treenode text="j">
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                  <treenode text="OPERATOR">
+                    <treenode text="<">
+                    </treenode>
+                  </treenode>
+                  <treenode text="INTEGEREXPRESSION">
+                    <treenode text="INTEGERLITERAL">
+                      <treenode text="10">
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                </treenode>
+                <treenode text="SEQUENTIALCOMMAND">
+                  <treenode text="ASSIGNCOMMAND">
+                    <treenode text="SUBSCRIPTVNAME">
+                      <treenode text="SIMPLEVNAME">
+                        <treenode text="IDENTIFIER">
+                          <treenode text="A">
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="VNAMEEXPRESSION">
+                        <treenode text="SIMPLEVNAME">
+                          <treenode text="IDENTIFIER">
+                            <treenode text="j">
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                    <treenode text="BINARYEXPRESSION">
+                      <treenode text="BINARYEXPRESSION">
+                        <treenode text="INTEGEREXPRESSION">
+                          <treenode text="INTEGERLITERAL">
+                            <treenode text="70">
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                        <treenode text="OPERATOR">
+                          <treenode text="*">
+                          </treenode>
+                        </treenode>
+                        <treenode text="BINARYEXPRESSION">
+                          <treenode text="VNAMEEXPRESSION">
+                            <treenode text="SIMPLEVNAME">
+                              <treenode text="IDENTIFIER">
+                                <treenode text="j">
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                          <treenode text="OPERATOR">
+                            <treenode text="+">
+                            </treenode>
+                          </treenode>
+                          <treenode text="INTEGEREXPRESSION">
+                            <treenode text="INTEGERLITERAL">
+                              <treenode text="1">
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="OPERATOR">
+                        <treenode text="//">
+                        </treenode>
+                      </treenode>
+                      <treenode text="INTEGEREXPRESSION">
+                        <treenode text="INTEGERLITERAL">
+                          <treenode text="100">
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                  <treenode text="ASSIGNCOMMAND">
+                    <treenode text="SIMPLEVNAME">
+                      <treenode text="IDENTIFIER">
+                        <treenode text="j">
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                    <treenode text="BINARYEXPRESSION">
+                      <treenode text="VNAMEEXPRESSION">
+                        <treenode text="SIMPLEVNAME">
+                          <treenode text="IDENTIFIER">
+                            <treenode text="j">
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="OPERATOR">
+                        <treenode text="+">
+                        </treenode>
+                      </treenode>
+                      <treenode text="INTEGEREXPRESSION">
+                        <treenode text="INTEGERLITERAL">
+                          <treenode text="1">
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+            </treenode>
+            <treenode text="ASSIGNCOMMAND">
+              <treenode text="SIMPLEVNAME">
+                <treenode text="IDENTIFIER">
+                  <treenode text="j">
+                  </treenode>
+                </treenode>
+              </treenode>
+              <treenode text="INTEGEREXPRESSION">
+                <treenode text="INTEGERLITERAL">
+                  <treenode text="0">
+                  </treenode>
+                </treenode>
+              </treenode>
+            </treenode>
+          </treenode>
+          <treenode text="WHILECOMMAND">
+            <treenode text="BINARYEXPRESSION">
+              <treenode text="VNAMEEXPRESSION">
+                <treenode text="SIMPLEVNAME">
+                  <treenode text="IDENTIFIER">
+                    <treenode text="j">
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+              <treenode text="OPERATOR">
+                <treenode text="<">
+                </treenode>
+              </treenode>
+              <treenode text="INTEGEREXPRESSION">
+                <treenode text="INTEGERLITERAL">
+                  <treenode text="9">
+                  </treenode>
+                </treenode>
+              </treenode>
+            </treenode>
+            <treenode text="SEQUENTIALCOMMAND">
+              <treenode text="SEQUENTIALCOMMAND">
+                <treenode text="ASSIGNCOMMAND">
+                  <treenode text="SIMPLEVNAME">
+                    <treenode text="IDENTIFIER">
+                      <treenode text="k">
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                  <treenode text="INTEGEREXPRESSION">
+                    <treenode text="INTEGERLITERAL">
+                      <treenode text="0">
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                </treenode>
+                <treenode text="WHILECOMMAND">
+                  <treenode text="BINARYEXPRESSION">
+                    <treenode text="VNAMEEXPRESSION">
+                      <treenode text="SIMPLEVNAME">
+                        <treenode text="IDENTIFIER">
+                          <treenode text="k">
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                    <treenode text="OPERATOR">
+                      <treenode text="<">
+                      </treenode>
+                    </treenode>
+                    <treenode text="INTEGEREXPRESSION">
+                      <treenode text="INTEGERLITERAL">
+                        <treenode text="9">
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                  <treenode text="SEQUENTIALCOMMAND">
+                    <treenode text="IFCOMMAND">
+                      <treenode text="BINARYEXPRESSION">
+                        <treenode text="VNAMEEXPRESSION">
+                          <treenode text="SUBSCRIPTVNAME">
+                            <treenode text="SIMPLEVNAME">
+                              <treenode text="IDENTIFIER">
+                                <treenode text="A">
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                            <treenode text="VNAMEEXPRESSION">
+                              <treenode text="SIMPLEVNAME">
+                                <treenode text="IDENTIFIER">
+                                  <treenode text="k">
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                        <treenode text="OPERATOR">
+                          <treenode text=">">
+                          </treenode>
+                        </treenode>
+                        <treenode text="VNAMEEXPRESSION">
+                          <treenode text="SUBSCRIPTVNAME">
+                            <treenode text="SIMPLEVNAME">
+                              <treenode text="IDENTIFIER">
+                                <treenode text="A">
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                            <treenode text="BINARYEXPRESSION">
+                              <treenode text="VNAMEEXPRESSION">
+                                <treenode text="SIMPLEVNAME">
+                                  <treenode text="IDENTIFIER">
+                                    <treenode text="k">
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                              <treenode text="OPERATOR">
+                                <treenode text="+">
+                                </treenode>
+                              </treenode>
+                              <treenode text="INTEGEREXPRESSION">
+                                <treenode text="INTEGERLITERAL">
+                                  <treenode text="1">
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="SEQUENTIALCOMMAND">
+                        <treenode text="SEQUENTIALCOMMAND">
+                          <treenode text="ASSIGNCOMMAND">
+                            <treenode text="SIMPLEVNAME">
+                              <treenode text="IDENTIFIER">
+                                <treenode text="t">
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                            <treenode text="VNAMEEXPRESSION">
+                              <treenode text="SUBSCRIPTVNAME">
+                                <treenode text="SIMPLEVNAME">
+                                  <treenode text="IDENTIFIER">
+                                    <treenode text="A">
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                                <treenode text="VNAMEEXPRESSION">
+                                  <treenode text="SIMPLEVNAME">
+                                    <treenode text="IDENTIFIER">
+                                      <treenode text="k">
+                                      </treenode>
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                          <treenode text="ASSIGNCOMMAND">
+                            <treenode text="SUBSCRIPTVNAME">
+                              <treenode text="SIMPLEVNAME">
+                                <treenode text="IDENTIFIER">
+                                  <treenode text="A">
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                              <treenode text="VNAMEEXPRESSION">
+                                <treenode text="SIMPLEVNAME">
+                                  <treenode text="IDENTIFIER">
+                                    <treenode text="k">
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                            <treenode text="VNAMEEXPRESSION">
+                              <treenode text="SUBSCRIPTVNAME">
+                                <treenode text="SIMPLEVNAME">
+                                  <treenode text="IDENTIFIER">
+                                    <treenode text="A">
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                                <treenode text="BINARYEXPRESSION">
+                                  <treenode text="VNAMEEXPRESSION">
+                                    <treenode text="SIMPLEVNAME">
+                                      <treenode text="IDENTIFIER">
+                                        <treenode text="k">
+                                        </treenode>
+                                      </treenode>
+                                    </treenode>
+                                  </treenode>
+                                  <treenode text="OPERATOR">
+                                    <treenode text="+">
+                                    </treenode>
+                                  </treenode>
+                                  <treenode text="INTEGEREXPRESSION">
+                                    <treenode text="INTEGERLITERAL">
+                                      <treenode text="1">
+                                      </treenode>
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                        <treenode text="ASSIGNCOMMAND">
+                          <treenode text="SUBSCRIPTVNAME">
+                            <treenode text="SIMPLEVNAME">
+                              <treenode text="IDENTIFIER">
+                                <treenode text="A">
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                            <treenode text="BINARYEXPRESSION">
+                              <treenode text="VNAMEEXPRESSION">
+                                <treenode text="SIMPLEVNAME">
+                                  <treenode text="IDENTIFIER">
+                                    <treenode text="k">
+                                    </treenode>
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                              <treenode text="OPERATOR">
+                                <treenode text="+">
+                                </treenode>
+                              </treenode>
+                              <treenode text="INTEGEREXPRESSION">
+                                <treenode text="INTEGERLITERAL">
+                                  <treenode text="1">
+                                  </treenode>
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                          <treenode text="VNAMEEXPRESSION">
+                            <treenode text="SIMPLEVNAME">
+                              <treenode text="IDENTIFIER">
+                                <treenode text="t">
+                                </treenode>
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="EMPTYCOMMAND">
+                      </treenode>
+                    </treenode>
+                    <treenode text="ASSIGNCOMMAND">
+                      <treenode text="SIMPLEVNAME">
+                        <treenode text="IDENTIFIER">
+                          <treenode text="k">
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="BINARYEXPRESSION">
+                        <treenode text="VNAMEEXPRESSION">
+                          <treenode text="SIMPLEVNAME">
+                            <treenode text="IDENTIFIER">
+                              <treenode text="k">
+                              </treenode>
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                        <treenode text="OPERATOR">
+                          <treenode text="+">
+                          </treenode>
+                        </treenode>
+                        <treenode text="INTEGEREXPRESSION">
+                          <treenode text="INTEGERLITERAL">
+                            <treenode text="1">
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+              <treenode text="ASSIGNCOMMAND">
+                <treenode text="SIMPLEVNAME">
+                  <treenode text="IDENTIFIER">
+                    <treenode text="j">
+                    </treenode>
+                  </treenode>
+                </treenode>
+                <treenode text="BINARYEXPRESSION">
+                  <treenode text="VNAMEEXPRESSION">
+                    <treenode text="SIMPLEVNAME">
+                      <treenode text="IDENTIFIER">
+                        <treenode text="j">
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                  <treenode text="OPERATOR">
+                    <treenode text="+">
+                    </treenode>
+                  </treenode>
+                  <treenode text="INTEGEREXPRESSION">
+                    <treenode text="INTEGERLITERAL">
+                      <treenode text="1">
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+            </treenode>
+          </treenode>
+        </treenode>
+        <treenode text="ASSIGNCOMMAND">
+          <treenode text="SIMPLEVNAME">
+            <treenode text="IDENTIFIER">
+              <treenode text="j">
+              </treenode>
+            </treenode>
+          </treenode>
+          <treenode text="INTEGEREXPRESSION">
+            <treenode text="INTEGERLITERAL">
+              <treenode text="0">
+              </treenode>
+            </treenode>
+          </treenode>
+        </treenode>
+      </treenode>
+      <treenode text="WHILECOMMAND">
+        <treenode text="BINARYEXPRESSION">
+          <treenode text="VNAMEEXPRESSION">
+            <treenode text="SIMPLEVNAME">
+              <treenode text="IDENTIFIER">
+                <treenode text="j">
+                </treenode>
+              </treenode>
+            </treenode>
+          </treenode>
+          <treenode text="OPERATOR">
+            <treenode text="<">
+            </treenode>
+          </treenode>
+          <treenode text="INTEGEREXPRESSION">
+            <treenode text="INTEGERLITERAL">
+              <treenode text="10">
+              </treenode>
+            </treenode>
+          </treenode>
+        </treenode>
+        <treenode text="SEQUENTIALCOMMAND">
+          <treenode text="SEQUENTIALCOMMAND">
+            <treenode text="CALLCOMMAND">
+              <treenode text="IDENTIFIER">
+                <treenode text="putint">
+                </treenode>
+              </treenode>
+              <treenode text="SINGLEACTUALPARAMETERSEQUENCE">
+                <treenode text="CONSTACTUALPARAMETER">
+                  <treenode text="VNAMEEXPRESSION">
+                    <treenode text="SUBSCRIPTVNAME">
+                      <treenode text="SIMPLEVNAME">
+                        <treenode text="IDENTIFIER">
+                          <treenode text="A">
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                      <treenode text="VNAMEEXPRESSION">
+                        <treenode text="SIMPLEVNAME">
+                          <treenode text="IDENTIFIER">
+                            <treenode text="j">
+                            </treenode>
+                          </treenode>
+                        </treenode>
+                      </treenode>
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+            </treenode>
+            <treenode text="CALLCOMMAND">
+              <treenode text="IDENTIFIER">
+                <treenode text="puteol">
+                </treenode>
+              </treenode>
+              <treenode text="EMPTYACTUALPARAMETERSEQUENCE">
+              </treenode>
+            </treenode>
+          </treenode>
+          <treenode text="ASSIGNCOMMAND">
+            <treenode text="SIMPLEVNAME">
+              <treenode text="IDENTIFIER">
+                <treenode text="j">
+                </treenode>
+              </treenode>
+            </treenode>
+            <treenode text="BINARYEXPRESSION">
+              <treenode text="VNAMEEXPRESSION">
+                <treenode text="SIMPLEVNAME">
+                  <treenode text="IDENTIFIER">
+                    <treenode text="j">
+                    </treenode>
+                  </treenode>
+                </treenode>
+              </treenode>
+              <treenode text="OPERATOR">
+                <treenode text="+">
+                </treenode>
+              </treenode>
+              <treenode text="INTEGEREXPRESSION">
+                <treenode text="INTEGERLITERAL">
+                  <treenode text="1">
+                  </treenode>
+                </treenode>
+              </treenode>
+            </treenode>
+          </treenode>
+        </treenode>
+      </treenode>
+    </treenode>
+  </treenode>
+</treenode>
