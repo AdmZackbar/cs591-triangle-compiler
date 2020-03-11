@@ -1,4 +1,7 @@
 compiler
 disassembler
 interpreter
+./Output
+*.tam
+*.xml
 
