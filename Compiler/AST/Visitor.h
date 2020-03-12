@@ -8,8 +8,10 @@ public:
 	virtual Object* visitAssignCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitCallCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitEmptyCommand(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitForCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIfCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitLetCommand(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitRepeatCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSequentialCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitWhileCommand(Object* ast, Object* o){ return NULL; }
 		

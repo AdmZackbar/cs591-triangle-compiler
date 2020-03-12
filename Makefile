@@ -1,5 +1,5 @@
 CC = g++
-EXECS = compiler disassembler interpreter
+EXECS = tc td ti
 EXAMPLEDIR = ./Examples
 OUTDIR = ./Output
 RESULTDIR = ./Output/Results
@@ -7,20 +7,19 @@ RESULTDIR = ./Output/Results
 .PHONY: all test clean
 all: $(EXECS)
 
-compiler : ./Compiler/main.cpp
-	$(CC) ./Compiler/main.cpp -I ./Compiler -o compiler
+tc : ./Compiler/main.cpp
+	$(CC) ./Compiler/main.cpp -I ./Compiler -o tc
 
-disassembler : ./Disassembler/main.cpp
-	$(CC) ./Disassembler/main.cpp -I ./Disassembler -o disassembler
+td : ./Disassembler/main.cpp
+	$(CC) ./Disassembler/main.cpp -I ./Disassembler -o td
 
-interpreter : ./Interpreter/main.cpp
-	$(CC) ./Interpreter/main.cpp -I ./Interpreter -o interpreter
+ti : ./Interpreter/main.cpp
+	$(CC) ./Interpreter/main.cpp -I ./Interpreter -o ti
 
-test : compiler interpreter
+test : tc ti
 	@mkdir -p Output/Results
-	@$(foreach f, $(shell ls $(EXAMPLEDIR)), ./compiler $(EXAMPLEDIR)/$(f) $(OUTDIR)/$(f).tam;)
-	@$(foreach f, $(shell ls $(OUTDIR)), ./interpreter $(OUTDIR)/$(f) > $(RESULTDIR)/$(f).output;)
+	@$(foreach f, $(shell ls $(EXAMPLEDIR)), ./tc $(EXAMPLEDIR)/$(f) $(OUTDIR)/$(f).tam;)
+	@$(foreach f, $(shell ls $(OUTDIR)), ./ti $(OUTDIR)/$(f) > $(RESULTDIR)/$(f).output;)
 
 clean :
-	rm -rf $(EXECS) ${OUTDIR} *.tam *.xml output.txt 
-
+	rm -rf $(EXECS) ${OUTDIR} *.tam *.xml

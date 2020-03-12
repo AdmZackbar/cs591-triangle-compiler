@@ -306,6 +306,32 @@ Command* Parser::parseSingleCommand() {
         commandAST = new WhileCommand(eAST, cAST, commandPos);
       }
       break;
+  
+  case Token::REPEAT:
+    {
+      acceptIt();
+      Command *cAST = parseSingleCommand();
+      accept(Token::UNTIL);
+      Expression *eAST = parseExpression();
+      finish(commandPos);
+      commandAST = new RepeatCommand(cAST, eAST, commandPos);
+    }
+    break;
+
+  case Token::FOR:
+    {
+      acceptIt();
+      Identifier *iEST = parseIdentifier();
+      accept(Token::FROM);
+      Expression *e1AST = parseExpression();
+      accept(Token::TO);
+      Expression *e2AST = parseExpression();
+      accept(Token::DO);
+      Command *cAST = parseSingleCommand();
+      finish(commandPos);
+      commandAST = new ForCommand(iEST, e1AST, e2AST, cAST, commandPos);
+    }
+    break;
 
 	case Token::SEMICOLON:
 	case Token::END:
