@@ -2,6 +2,7 @@
 #define _Parser
 
 #include <cstdio>
+#include <vector>
 #include "SourcePosition.h"
 #include "SourceFile.h"
 #include "Token.h"
@@ -28,6 +29,7 @@ public:
   void start(SourcePosition* position) ;
   void finish(SourcePosition* position);
   void acceptIt();
+  bool check(int tokenExpected);
 
 
 //Below are the methods that throw SyntaxError exception in Java
@@ -86,6 +88,10 @@ void Parser::acceptIt() {
     previousTokenPosition = currentToken->position;
     currentToken = lexicalAnalyser->scan();
   }
+
+bool Parser::check(int tokenExpected) {
+  return currentToken->kind == tokenExpected;
+}
 
 // start records the position of the start of a phrase.
 // This is defined to be the position of the first
@@ -321,7 +327,7 @@ Command* Parser::parseSingleCommand() {
   case Token::FOR:
     {
       acceptIt();
-      Identifier *iEST = parseIdentifier();
+      Identifier *iAST = parseIdentifier();
       accept(Token::FROM);
       Expression *e1AST = parseExpression();
       accept(Token::TO);
@@ -329,7 +335,40 @@ Command* Parser::parseSingleCommand() {
       accept(Token::DO);
       Command *cAST = parseSingleCommand();
       finish(commandPos);
-      commandAST = new ForCommand(iEST, e1AST, e2AST, cAST, commandPos);
+      commandAST = new ForCommand(iAST, e1AST, e2AST, cAST, commandPos);
+    }
+    break;
+
+  case Token::CASE:
+    {
+      acceptIt();
+      Expression *eAST = parseExpression();
+      accept(Token::OF);
+      std::vector<IntegerLiteral *> iASTs;
+      std::vector<Command *> cASTs;
+      while (check(Token::INTLITERAL))
+      {
+        iASTs.push_back(parseIntegerLiteral());
+        accept(Token::COLON);
+        cASTs.push_back(parseSingleCommand());
+        accept(Token::SEMICOLON);
+      }
+      accept(Token::ELSE);
+      accept(Token::COLON);
+      Command *elseAST = parseSingleCommand();
+      finish(commandPos);
+      commandAST = new CaseCommand(eAST, iASTs, cASTs, elseAST, commandPos);
+    }
+    break;
+  
+  case Token::VAR:
+    {
+      acceptIt();
+      Identifier *iAST = parseIdentifier();
+      accept(Token::BECOMES);
+      Expression *eAST = parseExpression();
+      finish(commandPos);
+      commandAST = new VarDeclCommand(iAST, eAST, commandPos);
     }
     break;
 

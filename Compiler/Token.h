@@ -39,7 +39,7 @@ public:	int	firstReservedWord,lastReservedWord;
     FROM,
     FUNC,
     IF,
-	IN_IN,
+	  IN_IN,
     LET,
     OF,
     PACKAGE,

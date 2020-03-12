@@ -15,8 +15,8 @@ public:
 	Expression *E1, *E2; 
     Command *C;
 
-	ForCommand (Identifier *iEST, Expression* e1AST, Expression* e2AST, Command* cAST, SourcePosition* thePosition): Command(thePosition) {
-        I = iEST;
+	ForCommand (Identifier *iAST, Expression* e1AST, Expression* e2AST, Command* cAST, SourcePosition* thePosition): Command(thePosition) {
+        I = iAST;
         E1 = e1AST;
         E2 = e2AST;
         C = cAST;
