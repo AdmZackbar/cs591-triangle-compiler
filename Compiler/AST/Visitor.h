@@ -9,6 +9,7 @@ public:
 	virtual Object* visitCallCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitCaseCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitEmptyCommand(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitEnumCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitForCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIfCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitLetCommand(Object* ast, Object* o){ return NULL; }

@@ -372,7 +372,27 @@ Command* Parser::parseSingleCommand() {
     }
     break;
 
-	case Token::SEMICOLON:
+	case Token::ENUM:
+    {
+      acceptIt();
+      accept(Token::TYPE);
+      Identifier *nameAST = parseIdentifier();
+      accept(Token::IS);
+      accept(Token::LPAREN);
+      std::vector<Identifier *> iASTs;
+      iASTs.push_back(parseIdentifier());
+      while (check(Token::COMMA))
+      {
+        acceptIt();
+        iASTs.push_back(parseIdentifier());
+      }
+      accept(Token::RPAREN);
+      finish(commandPos);
+      commandAST = new EnumCommand(nameAST, iASTs, commandPos);
+    }
+    break;
+  
+  case Token::SEMICOLON:
 	case Token::END:
 	case Token::ELSE:
 	case Token::IN_IN:

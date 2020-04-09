@@ -21,10 +21,15 @@ public:
 
   Object* visitAssignCommand(Object* obj, Object* o);
   Object* visitCallCommand(Object* obj, Object* o);
+  Object* visitCaseCommand(Object* obj, Object* o);
   Object* visitEmptyCommand(Object* obj, Object* o);
+  Object* visitEnumCommand(Object* obj, Object* o);
+  Object* visitForCommand(Object* obj, Object* o);
   Object* visitIfCommand(Object* obj, Object* o);
   Object* visitLetCommand(Object* obj, Object* o);
+  Object* visitRepeatCommand(Object* obj, Object* o);
   Object* visitSequentialCommand(Object* obj, Object* o);
+  Object* visitVarDeclCommand(Object* obj, Object* o);
   Object* visitWhileCommand(Object* obj, Object* o);
 
   // Expressions
@@ -250,11 +255,64 @@ Object* Checker::visitCallCommand(Object* obj, Object* o) {
     return NULL;
   }
 
+Object* Checker::visitCaseCommand(Object* obj, Object* o)
+{
+  printdetails(obj);
+  CaseCommand *ast = (CaseCommand *)obj;
+
+  TypeDenoter *eType = (TypeDenoter *)ast->E->visit(this, NULL);
+  if (!eType->equals(getvariables->integerType))
+    reporter->reportError("Integer expression expected here", "", ast->E->position);
+  ast->elseC->visit(this, NULL);
+  
+  // TODO - enforce distinct literals
+  for (int i=0; i<ast->I.size(); i++)
+  {
+    ast->I[i]->visit(this, NULL);
+    ast->C[i]->visit(this, NULL);
+  }
+
+  return NULL;
+}
+
 
 Object* Checker::visitEmptyCommand(Object* obj, Object* o) {
 	printdetails(obj);
     return NULL;
   }
+
+Object* Checker::visitEnumCommand(Object* obj, Object* o)
+{
+  printdetails(obj);
+  EnumCommand *ast = (EnumCommand *)obj;
+
+  ast->EnumName->visit(this, NULL);
+  for (int i=0; i<ast->I.size(); i++)
+  {
+    ast->I[i]->visit(this, NULL);
+  }
+
+  return NULL;
+}
+
+Object* Checker::visitForCommand(Object* obj, Object* o)
+{
+  printdetails(obj);
+  ForCommand *ast = (ForCommand *)obj;
+
+  ast->I->visit(this, NULL);
+
+  TypeDenoter *eType = (TypeDenoter *)ast->E1->visit(this, NULL);
+  if (!eType->equals(getvariables->integerType))
+    reporter->reportError("Integer expression expected here", "", ast->E1->position);
+  eType = (TypeDenoter *)ast->E2->visit(this, NULL);
+  if (!eType->equals(getvariables->integerType))
+    reporter->reportError("Integer expression expected here", "", ast->E2->position);
+  
+  ast->C->visit(this, NULL);
+
+  return NULL;
+}
 
 Object* Checker::visitIfCommand(Object* obj, Object* o) {
 	printdetails(obj);
@@ -284,6 +342,19 @@ Object* Checker::visitLetCommand(Object* obj, Object* o) {
     return NULL;
   }
 
+Object* Checker::visitRepeatCommand(Object* obj, Object* o)
+{
+  printdetails(obj);
+  RepeatCommand *ast = (RepeatCommand *)obj;
+
+  ast->C->visit(this, NULL);
+  TypeDenoter *eType = (TypeDenoter *)ast->E->visit(this, NULL);
+  if (!eType->equals(getvariables->booleanType))
+    reporter->reportError("Boolean expression expected here", "", ast->E->position);
+
+  return NULL;
+}
+
 Object* Checker::visitSequentialCommand(Object* obj, Object* o) {
 	//printf("IN THE SEQUENTIALCOMMAND\n");
 	
@@ -294,6 +365,17 @@ Object* Checker::visitSequentialCommand(Object* obj, Object* o) {
     ast->C2->visit(this, NULL);
     return NULL;
   }
+
+Object* Checker::visitVarDeclCommand(Object* obj, Object* o)
+{
+  printdetails(obj);
+  VarDeclCommand *ast = (VarDeclCommand *)obj;
+
+  ast->I->visit(this, NULL);
+  ast->E->visit(this, NULL);
+
+  return NULL;
+}
 
 Object* Checker::visitWhileCommand(Object* obj, Object* o) {
 	printdetails(obj);

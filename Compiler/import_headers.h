@@ -41,6 +41,7 @@
 #include "./AST/EmptyExpression.h"
 #include "./AST/EmptyExpression.h"
 #include "./AST/EmptyFormalParameterSequence.h"
+#include "./AST/EnumCommand.h"
 #include "./AST/ErrorTypeDenoter.h"
 #include "./AST/FieldTypeDenoter.h"
 #include "./AST/ForCommand.h"
