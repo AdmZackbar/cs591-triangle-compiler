@@ -46,9 +46,12 @@ Machine* mach;
 
   Object* visitAssignCommand(Object* obj, Object* o);
   Object* visitCallCommand(Object* obj, Object* o);
+  Object* visitCaseCommand(Object* obj, Object* o);
   Object* visitEmptyCommand(Object* obj, Object* o);
+  Object* visitForCommand(Object* obj, Object* o);
   Object* visitIfCommand(Object* obj, Object* o);
   Object* visitLetCommand(Object* obj, Object* o);
+  Object* visitRepeatCommand(Object* obj, Object* o);
   Object* visitSequentialCommand(Object* obj, Object* o);
   Object* visitWhileCommand(Object* obj, Object* o);
 
@@ -228,10 +231,63 @@ Object* Encoder::visitCallCommand(Object* obj, Object* o) {
     return NULL;
   }
 
+Object* Encoder::visitCaseCommand(Object* obj, Object* o)
+{
+  CaseCommand *ast = (CaseCommand *)obj;
+
+  int numCases = ast->C.size();
+  // List of addresses that will need to be filled in
+  int jumpAddrs[numCases];
+  int thisAddr, nextAddr;
+
+  // Get the integer to be compared
+  ast->E->visit(this, o);
+  // Write each command along with jump instructions
+  for (int i=0; i<numCases; i++)
+  {
+    thisAddr = nextInstrAddr;
+    // Jump to the command associated with this int lit if it matches
+    emit(mach->JUMPIFop, atoi(ast->I[i]->spelling.c_str()), mach->CBr, 0);
+    nextAddr = nextInstrAddr;
+    // Jump to the next checker if it did not match
+    emit(mach->JUMPop, 0, mach->CBr, 0);
+    patch(thisAddr, nextInstrAddr);
+    ast->C[i]->visit(this, o);
+    // After the command is executed, jump to the end of the case statement
+    jumpAddrs[i] = nextInstrAddr;
+    emit(mach->JUMPop, 0, mach->CBr, 0);
+    patch(nextAddr, nextInstrAddr);
+  }
+  // Handle the default case
+  ast->elseC->visit(this, o);
+  // Update all the final jump statements
+  for (int i=0; i<numCases; i++)
+  {
+    patch(jumpAddrs[i], nextInstrAddr);
+  }
+
+  return NULL;
+}
+
 Object* Encoder::visitEmptyCommand(Object* obj, Object* o) {
     EmptyCommand* ast = (EmptyCommand*)obj;
     return NULL;
   }
+
+// TODO - Need to understand how const vars work and how to increase scope
+Object* Encoder::visitForCommand(Object* obj, Object* o)
+{
+  ForCommand *ast = (ForCommand *)obj;
+  Frame *frame = (Frame *)o;
+
+  Integer* valSize1 = (Integer*) ast->E1->visit(this, frame);
+  Integer* valSize2 = (Integer*) ast->E2->visit(this, frame);
+  // Bind I to E1
+  // Bind E2 as the upper bound
+  // Execute a loop on C until I reaches E2
+
+  return NULL;
+}
 
 Object* Encoder::visitIfCommand(Object* obj, Object* o) {
 	  IfCommand* ast = (IfCommand*)obj;
@@ -260,6 +316,21 @@ Object* Encoder::visitLetCommand(Object* obj, Object* o) {
 		emit(mach->POPop, 0, 0, extraSize);
     return NULL;
   }
+
+Object* Encoder::visitRepeatCommand(Object* obj, Object* o)
+{
+  RepeatCommand *ast = (RepeatCommand *)obj;
+  int loopAddr = nextInstrAddr;
+
+  // Execute command first
+  ast->C->visit(this, o);
+  // Evaluate boolean expression
+  ast->E->visit(this, o);
+  // If expression is false, loop back to the command
+  emit(mach->JUMPIFop, mach->falseRep, mach->CBr, loopAddr);
+
+  return NULL;
+}
 
 Object* Encoder::visitSequentialCommand(Object* obj, Object* o) {
 	SequentialCommand* ast = (SequentialCommand*)obj;

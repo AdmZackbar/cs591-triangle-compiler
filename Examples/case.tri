@@ -1,0 +1,10 @@
+let var a:Integer
+in begin
+    a := 3;
+    case a of
+        0: put('a');
+        1: put('b');
+
+        3: put('d');
+        else: put('-')
+end
