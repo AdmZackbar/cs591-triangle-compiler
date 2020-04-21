@@ -364,11 +364,11 @@ Command* Parser::parseSingleCommand() {
   case Token::VAR:
     {
       acceptIt();
-      Identifier *iAST = parseIdentifier();
+      Vname *vAST = parseVname();
       accept(Token::BECOMES);
       Expression *eAST = parseExpression();
       finish(commandPos);
-      commandAST = new VarDeclCommand(iAST, eAST, commandPos);
+      commandAST = new VarDeclCommand(vAST, eAST, commandPos);
     }
     break;
 

@@ -53,6 +53,7 @@ Machine* mach;
   Object* visitLetCommand(Object* obj, Object* o);
   Object* visitRepeatCommand(Object* obj, Object* o);
   Object* visitSequentialCommand(Object* obj, Object* o);
+  Object* visitVarDeclCommand(Object* obj, Object* o);
   Object* visitWhileCommand(Object* obj, Object* o);
 
 
@@ -238,16 +239,22 @@ Object* Encoder::visitCaseCommand(Object* obj, Object* o)
   int numCases = ast->C.size();
   // List of addresses that will need to be filled in
   int jumpAddrs[numCases];
-  int thisAddr, nextAddr;
+  int thisAddr, nextAddr, exprAddr;
 
-  // Get the integer to be compared
-  ast->E->visit(this, o);
   // Write each command along with jump instructions
   for (int i=0; i<numCases; i++)
   {
+    // Get the integer to be compared
+    ast->E->visit(this, o);
+    // Load the integer literal
+    emit(mach->LOADLop, 0, 0, atoi(ast->I[i]->spelling.c_str()));
+    // Size of integers to be compared
+    emit(mach->LOADLop, 0, 0, 1);
+    // Compare the 2 values
+    emit(mach->CALLop, mach->LBr, mach->PBr, mach->eqDisplacement);
     thisAddr = nextInstrAddr;
     // Jump to the command associated with this int lit if it matches
-    emit(mach->JUMPIFop, atoi(ast->I[i]->spelling.c_str()), mach->CBr, 0);
+    emit(mach->JUMPIFop, mach->trueRep, mach->CBr, 0);
     nextAddr = nextInstrAddr;
     // Jump to the next checker if it did not match
     emit(mach->JUMPop, 0, mach->CBr, 0);
@@ -338,6 +345,19 @@ Object* Encoder::visitSequentialCommand(Object* obj, Object* o) {
     ast->C2->visit(this, o);
     return NULL;
   }
+
+Object* Encoder::visitVarDeclCommand(Object* obj, Object* o)
+{
+  VarDeclCommand *ast = (VarDeclCommand *)obj;
+  Frame *frame = (Frame *)o;
+
+  int valSize = ((Integer *)ast->E->visit(this, frame))->value;
+  emit(mach->PUSHop, 0, 0, valSize);
+	ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
+  encodeFetch(ast->V, frame, valSize);
+
+  return NULL;
+}
 
 Object* Encoder::visitWhileCommand(Object* obj, Object* o) {
 	WhileCommand* ast = (WhileCommand*)obj;

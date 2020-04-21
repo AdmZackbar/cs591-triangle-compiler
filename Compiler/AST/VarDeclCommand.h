@@ -11,11 +11,11 @@ using namespace std;
 class VarDeclCommand : public Command {
 
 public:
-    Identifier *I;
+    Vname *V;
     Expression *E;
 
-	VarDeclCommand (Identifier *iAST, Expression *eAST, SourcePosition* thePosition): Command(thePosition) {
-        I = iAST;
+	VarDeclCommand (Vname *vAST, Expression *eAST, SourcePosition* thePosition): Command(thePosition) {
+        V = vAST;
         E = eAST;
     }
 

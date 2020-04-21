@@ -1,10 +1,15 @@
 let var a:Integer
 in begin
-    a := 3;
+    a := 7;
     case a of
         0: put('a');
         1: put('b');
-
+        2: put('c');
         3: put('d');
+        4: put('e');
+        5: put('f');
+        6: put('g');
+        7: put('h');
+        8: put('i');
         else: put('-')
 end

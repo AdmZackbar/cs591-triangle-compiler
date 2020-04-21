@@ -371,7 +371,7 @@ Object* Checker::visitVarDeclCommand(Object* obj, Object* o)
   printdetails(obj);
   VarDeclCommand *ast = (VarDeclCommand *)obj;
 
-  ast->I->visit(this, NULL);
+  ast->V->visit(this, NULL);
   ast->E->visit(this, NULL);
 
   return NULL;
