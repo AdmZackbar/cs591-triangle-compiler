@@ -300,14 +300,14 @@ Object* Checker::visitForCommand(Object* obj, Object* o)
   printdetails(obj);
   ForCommand *ast = (ForCommand *)obj;
 
-  ast->I->visit(this, NULL);
+  ast->D->visit(this, NULL);
 
-  TypeDenoter *eType = (TypeDenoter *)ast->E1->visit(this, NULL);
+  TypeDenoter *eType = (TypeDenoter *)ast->D->E->visit(this, NULL);
   if (!eType->equals(getvariables->integerType))
-    reporter->reportError("Integer expression expected here", "", ast->E1->position);
-  eType = (TypeDenoter *)ast->E2->visit(this, NULL);
+    reporter->reportError("Integer expression expected here", "", ast->D->E->position);
+  eType = (TypeDenoter *)ast->E->visit(this, NULL);
   if (!eType->equals(getvariables->integerType))
-    reporter->reportError("Integer expression expected here", "", ast->E2->position);
+    reporter->reportError("Integer expression expected here", "", ast->E->position);
   
   ast->C->visit(this, NULL);
 

@@ -1,7 +1,7 @@
 #ifndef _VarDeclCommand
 #define _VarDeclCommand
 
-#include "./AST/Identifier.h"
+#include "./AST/Vname.h"
 #include "./AST/Expression.h"
 #include "./AST/Command.h"
 #include "SourcePosition.h"

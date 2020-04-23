@@ -1,7 +1,7 @@
 #ifndef _ForCommand
 #define _ForCommand
 
-#include "./AST/Identifier.h"
+#include "./AST/ConstDeclaration.h"
 #include "./AST/Command.h"
 #include "./AST/Expression.h"
 #include "SourcePosition.h"
@@ -11,14 +11,13 @@ using namespace std;
 class ForCommand : public Command {
 
 public:
-    Identifier *I;
-	Expression *E1, *E2; 
+    ConstDeclaration *D;
+	Expression *E; 
     Command *C;
 
-	ForCommand (Identifier *iAST, Expression* e1AST, Expression* e2AST, Command* cAST, SourcePosition* thePosition): Command(thePosition) {
-        I = iAST;
-        E1 = e1AST;
-        E2 = e2AST;
+	ForCommand (ConstDeclaration *dAST, Expression* eAST, Command* cAST, SourcePosition* thePosition): Command(thePosition) {
+        D = dAST;
+        E = eAST;
         C = cAST;
     }
 

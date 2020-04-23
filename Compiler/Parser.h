@@ -330,12 +330,13 @@ Command* Parser::parseSingleCommand() {
       Identifier *iAST = parseIdentifier();
       accept(Token::FROM);
       Expression *e1AST = parseExpression();
+      ConstDeclaration *dAST = new ConstDeclaration(iAST, e1AST, NULL);
       accept(Token::TO);
       Expression *e2AST = parseExpression();
       accept(Token::DO);
       Command *cAST = parseSingleCommand();
       finish(commandPos);
-      commandAST = new ForCommand(iAST, e1AST, e2AST, cAST, commandPos);
+      commandAST = new ForCommand(dAST, e2AST, cAST, commandPos);
     }
     break;
 

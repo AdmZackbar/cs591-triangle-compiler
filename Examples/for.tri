@@ -1,0 +1,6 @@
+let var a:Integer
+in begin
+    a := 7;
+    for i from 0 to a do
+        putint(i)
+end

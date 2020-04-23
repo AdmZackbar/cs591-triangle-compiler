@@ -281,17 +281,38 @@ Object* Encoder::visitEmptyCommand(Object* obj, Object* o) {
     return NULL;
   }
 
-// TODO - Need to understand how const vars work and how to increase scope
 Object* Encoder::visitForCommand(Object* obj, Object* o)
 {
   ForCommand *ast = (ForCommand *)obj;
   Frame *frame = (Frame *)o;
+  int loopAddr, endAddr;
 
-  Integer* valSize1 = (Integer*) ast->E1->visit(this, frame);
-  Integer* valSize2 = (Integer*) ast->E2->visit(this, frame);
-  // Bind I to E1
-  // Bind E2 as the upper bound
-  // Execute a loop on C until I reaches E2
+  // Initialize I to E1
+  int extraSize = ((Integer*) ast->E->visit(this, frame))->value;
+  UnknownValue *iVal = new UnknownValue(extraSize, frame->level, frame->size);
+  ast->D->entity = iVal;
+  Frame *newFrame = new Frame(frame, extraSize);
+  // Allocate space and store E1 into I
+  emit(mach->PUSHop, 0, 0, iVal->size);
+  emit(mach->STOREop, iVal->size, displayRegister(frame->level, iVal->address->level), iVal->address->displacement);
+
+  loopAddr = nextInstrAddr;
+  emit(mach->LOADop, iVal->size, displayRegister(frame->level, iVal->address->level), iVal->address->displacement);
+  ast->E->visit(this, frame);
+  // Exit loop when I > E2
+  emit(mach->CALLop, mach->LBr, mach->PBr, mach->leDisplacement);
+  endAddr = nextInstrAddr;
+  emit(mach->JUMPIFop, mach->falseRep, mach->CBr, 0);
+  ast->C->visit(this, newFrame);
+  // Increment I
+  emit(mach->LOADop, iVal->size, displayRegister(frame->level, iVal->address->level), iVal->address->displacement);
+  emit(mach->CALLop, mach->LBr, mach->PBr, mach->succDisplacement);
+  emit(mach->STOREop, iVal->size, displayRegister(frame->level, iVal->address->level), iVal->address->displacement);
+  // Loop to beginning
+  emit(mach->JUMPop, 0, mach->CBr, loopAddr);
+  patch(endAddr, nextInstrAddr);
+
+  emit(mach->POPop, 0, 0, iVal->size);
 
   return NULL;
 }
