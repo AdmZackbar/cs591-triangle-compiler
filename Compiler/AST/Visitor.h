@@ -15,7 +15,6 @@ public:
 	virtual Object* visitLetCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitRepeatCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSequentialCommand(Object* ast, Object* o){ return NULL; }
-	virtual Object* visitVarDeclCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitWhileCommand(Object* ast, Object* o){ return NULL; }
 		
 	// Expressions
@@ -34,12 +33,15 @@ public:
 	// Declarations
 	virtual Object* visitBinaryOperatorDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitConstDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitFuncBinOpDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitFuncUnaryOpDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitProcDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSequentialDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitTypeDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitUnaryOperatorDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitVarDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitVarInitDeclaration(Object* ast, Object* o){ return NULL; }
 	
 	// Array Aggregates
 	virtual Object* visitMultipleArrayAggregate(Object* ast, Object* o){ return NULL; }

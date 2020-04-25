@@ -1,0 +1,5 @@
+let var a:Integer; var b:=5; var c:=3*6; var f:=true
+in begin
+	a := b - c + 1;
+    putint(a)
+end

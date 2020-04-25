@@ -1,0 +1,6 @@
+let var b:Integer;
+    func ** (x:Integer, y:Integer):Integer ~
+        if y <= 0 then 1 else x * (x ** (y-1))
+in begin
+   putint(5)
+end

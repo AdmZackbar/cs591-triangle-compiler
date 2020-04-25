@@ -53,12 +53,15 @@ public:
 
   Object* visitBinaryOperatorDeclaration(Object* obj, Object* o);
   Object* visitConstDeclaration(Object* obj, Object* o);
+  Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
+  Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
   Object* visitProcDeclaration(Object* obj, Object* o) ;
   Object* visitSequentialDeclaration(Object* obj, Object* o);
   Object* visitTypeDeclaration(Object* obj, Object* o);
   Object* visitUnaryOperatorDeclaration(Object* obj, Object* o);
   Object* visitVarDeclaration(Object* obj, Object* o);
+  Object* visitVarInitDeclaration(Object* obj, Object* o);
 
   // Array Aggregates
   // Returns the TypeDenoter for the Array Aggregate. Does not use the
@@ -366,17 +369,6 @@ Object* Checker::visitSequentialCommand(Object* obj, Object* o) {
     return NULL;
   }
 
-Object* Checker::visitVarDeclCommand(Object* obj, Object* o)
-{
-  printdetails(obj);
-  VarDeclCommand *ast = (VarDeclCommand *)obj;
-
-  ast->V->visit(this, NULL);
-  ast->E->visit(this, NULL);
-
-  return NULL;
-}
-
 Object* Checker::visitWhileCommand(Object* obj, Object* o) {
 	printdetails(obj);
 	WhileCommand* ast = (WhileCommand*)obj;
@@ -569,6 +561,31 @@ Object* Checker::visitConstDeclaration(Object* obj, Object* o) {
     return NULL;
   }
 
+Object* Checker::visitFuncBinOpDeclaration(Object* obj, Object* o)
+{
+  FuncBinOpDeclaration *ast = (FuncBinOpDeclaration *)obj;
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->O->spelling, ast); // permits recursion
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->O->spelling, ast->position);
+  
+  idTable->openScope();
+  ast->P1->visit(this, NULL);
+  ast->P2->visit(this, NULL);
+
+  if (ast->P1->duplicated)
+		reporter->reportError ("duplicated formal parameter \"%\"",ast->P1->I->spelling, ast->position);
+  if (ast->P2->duplicated)
+		reporter->reportError ("duplicated formal parameter \"%\"",ast->P2->I->spelling, ast->position);
+
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  if (!ast->T->equals(eType))
+    reporter->reportError ("body of function \"%\" has wrong type", ast->O->spelling, ast->E->position);
+  idTable->closeScope();
+
+  return NULL;
+}
+
 Object* Checker::visitFuncDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	FuncDeclaration* ast = (FuncDeclaration*)obj;
@@ -587,6 +604,27 @@ Object* Checker::visitFuncDeclaration(Object* obj, Object* o) {
                             ast->I->spelling, ast->E->position);
     return NULL;
   }
+
+Object* Checker::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
+{
+  FuncBinOpDeclaration *ast = (FuncBinOpDeclaration *)obj;
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->O->spelling, ast); // permits recursion
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->O->spelling, ast->position);
+  
+  idTable->openScope();
+  ast->P1->visit(this, NULL);
+  if (ast->P1->duplicated)
+		reporter->reportError ("duplicated formal parameter \"%\"",ast->P1->I->spelling, ast->position);
+
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  if (!ast->T->equals(eType))
+    reporter->reportError ("body of function \"%\" has wrong type", ast->O->spelling, ast->E->position);
+  idTable->closeScope();
+
+  return NULL;
+}
 
 Object* Checker::visitProcDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
@@ -640,6 +678,18 @@ Object* Checker::visitVarDeclaration(Object* obj, Object* o) {
 
     return NULL;
   }
+
+Object* Checker::visitVarInitDeclaration(Object* obj, Object* o)
+{
+	VarInitDeclaration* ast = (VarInitDeclaration*)obj;
+  ast->T = (TypeDenoter*) ast->E->visit(this, NULL);
+  idTable->enter (ast->I->spelling, ast);
+
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
+
+  return NULL;
+}
 
   // Array Aggregates
 
@@ -1087,7 +1137,7 @@ Object* Checker::visitSimpleVname(Object* obj, Object* o) {
         ast->type = ((ConstDeclaration*) binding)->E->type;
         ast->variable = false;
       } 
-	  else if (binding->class_type() =="VARDECLARATION") {
+	  else if (binding->class_type() =="VARDECLARATION" || binding->class_type() =="VARINITDECLARATION") {
         ast->type = ((VarDeclaration*) binding)->T;
         ast->variable = true;
       } 

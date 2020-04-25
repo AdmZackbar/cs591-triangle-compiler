@@ -53,7 +53,6 @@ Machine* mach;
   Object* visitLetCommand(Object* obj, Object* o);
   Object* visitRepeatCommand(Object* obj, Object* o);
   Object* visitSequentialCommand(Object* obj, Object* o);
-  Object* visitVarDeclCommand(Object* obj, Object* o);
   Object* visitWhileCommand(Object* obj, Object* o);
 
 
@@ -74,12 +73,15 @@ Machine* mach;
   // Declarations
   Object* visitBinaryOperatorDeclaration(Object* obj,Object* o);
   Object* visitConstDeclaration(Object* obj, Object* o);
+  Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
+  Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
   Object* visitProcDeclaration(Object* obj, Object* o) ;
   Object* visitSequentialDeclaration(Object* obj, Object* o);
   Object* visitTypeDeclaration(Object* obj, Object* o);
   Object* visitUnaryOperatorDeclaration(Object* obj,Object* o);
   Object* visitVarDeclaration(Object* obj, Object* o);
+  Object* visitVarInitDeclaration(Object* obj, Object* o);
 
 
   // Array Aggregates
@@ -367,19 +369,6 @@ Object* Encoder::visitSequentialCommand(Object* obj, Object* o) {
     return NULL;
   }
 
-Object* Encoder::visitVarDeclCommand(Object* obj, Object* o)
-{
-  VarDeclCommand *ast = (VarDeclCommand *)obj;
-  Frame *frame = (Frame *)o;
-
-  int valSize = ((Integer *)ast->E->visit(this, frame))->value;
-  emit(mach->PUSHop, 0, 0, valSize);
-	ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
-  encodeFetch(ast->V, frame, valSize);
-
-  return NULL;
-}
-
 Object* Encoder::visitWhileCommand(Object* obj, Object* o) {
 	WhileCommand* ast = (WhileCommand*)obj;
     Frame* frame = (Frame*) o;
@@ -530,6 +519,33 @@ Object* Encoder::visitConstDeclaration(Object* obj, Object* o) {
     return new Integer(extraSize);
   }
 
+Object* Encoder::visitFuncBinOpDeclaration(Object* obj, Object* o)
+{
+  FuncBinOpDeclaration *ast = (FuncBinOpDeclaration *)obj;
+  Frame *frame = (Frame *)o;
+
+  int jumpAddr = nextInstrAddr;
+  int argsSize = 0;
+	int valSize = 0;
+
+	emit(mach->JUMPop, 0, mach->CBr, 0);
+	ast->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
+
+	if (frame->level == mach->maxRoutineLevel)
+    reporter->reportRestriction("can't nest routines more than 7 deep");
+  else {
+    Frame* frame1 = new Frame(frame->level + 1, 0);
+    argsSize += ((Integer*) ast->P1->T->visit(this, frame1))->value;
+    argsSize += ((Integer*) ast->P2->T->visit(this, frame1))->value;
+	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
+    valSize = ((Integer*) ast->E->visit(this, frame2))->value;
+  }
+	emit(mach->RETURNop, valSize, 0, argsSize);
+  patch(jumpAddr, nextInstrAddr);
+
+  return new Integer(0);
+}
+
 Object* Encoder::visitFuncDeclaration(Object* obj, Object* o) {
 	FuncDeclaration* ast = (FuncDeclaration*)obj;
     Frame* frame = (Frame*) o;
@@ -553,6 +569,32 @@ Object* Encoder::visitFuncDeclaration(Object* obj, Object* o) {
     patch(jumpAddr, nextInstrAddr);
     return new Integer(0);
   }
+
+Object* Encoder::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
+{
+  FuncUnaryOpDeclaration *ast = (FuncUnaryOpDeclaration *)obj;
+  Frame *frame = (Frame *)o;
+
+  int jumpAddr = nextInstrAddr;
+  int argsSize = 0;
+	int valSize = 0;
+
+	emit(mach->JUMPop, 0, mach->CBr, 0);
+	ast->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
+
+	if (frame->level == mach->maxRoutineLevel)
+    reporter->reportRestriction("can't nest routines more than 7 deep");
+  else {
+    Frame* frame1 = new Frame(frame->level + 1, 0);
+    argsSize = ((Integer*) ast->P1->T->visit(this, frame1))->value;
+	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
+    valSize = ((Integer*) ast->E->visit(this, frame2))->value;
+  }
+	emit(mach->RETURNop, valSize, 0, argsSize);
+  patch(jumpAddr, nextInstrAddr);
+
+  return new Integer(0);
+}
 
 Object* Encoder::visitProcDeclaration(Object* obj, Object* o) {
 	ProcDeclaration* ast = (ProcDeclaration*)obj;
@@ -611,6 +653,20 @@ Object* Encoder::visitVarDeclaration(Object* obj, Object* o) {
     writeTableDetails(ast);
     return new Integer(extraSize);
   }
+
+Object* Encoder::visitVarInitDeclaration(Object* obj, Object* o)
+{
+  VarInitDeclaration* ast = (VarInitDeclaration*)obj;
+  Frame* frame = (Frame*) o;
+  int extraSize;
+
+  extraSize = ((Integer*) ast->T->visit(this, NULL))->value;
+	emit(mach->PUSHop, 0, 0, extraSize);
+	ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
+  ast->E->visit(this, o);
+  emit(mach->STOREop, extraSize, displayRegister(frame->level, frame->level), frame->size);
+  return new Integer(extraSize);
+}
 
 
   // Array Aggregates

@@ -361,17 +361,6 @@ Command* Parser::parseSingleCommand() {
       commandAST = new CaseCommand(eAST, iASTs, cASTs, elseAST, commandPos);
     }
     break;
-  
-  case Token::VAR:
-    {
-      acceptIt();
-      Vname *vAST = parseVname();
-      accept(Token::BECOMES);
-      Expression *eAST = parseExpression();
-      finish(commandPos);
-      commandAST = new VarDeclCommand(vAST, eAST, commandPos);
-    }
-    break;
 
 	case Token::ENUM:
     {
@@ -680,15 +669,25 @@ Declaration* Parser::parseSingleDeclaration() {
       break;
 
 	case Token::VAR:
-      {
-        acceptIt();
-        Identifier* iAST = parseIdentifier();
-		accept(Token::COLON);
-        TypeDenoter* tAST = parseTypeDenoter();
-        finish(declarationPos);
-        declarationAST = new VarDeclaration(iAST, tAST, declarationPos);
-      }
-      break;
+  {
+    acceptIt();
+    Identifier* iAST = parseIdentifier();
+    if (check(Token::BECOMES))
+    {
+      acceptIt();
+      Expression *eAST = parseExpression();
+      finish(declarationPos);
+      declarationAST = new VarInitDeclaration(iAST, eAST, declarationPos);
+    }
+    else
+    {
+      accept(Token::COLON);
+      TypeDenoter* tAST = parseTypeDenoter();
+      finish(declarationPos);
+      declarationAST = new VarDeclaration(iAST, tAST, declarationPos);
+    }
+  }
+  break;
 
 	case Token::PROC:
       {
@@ -705,21 +704,50 @@ Declaration* Parser::parseSingleDeclaration() {
       break;
 
 	case Token::FUNC:
+  {
+    acceptIt();
+    if (check(Token::OPERATOR))
+    {
+      Operator *opAST = parseOperator();
+      accept(Token::LPAREN);
+      Identifier *i1AST = parseIdentifier();
+      accept(Token::COLON);
+      TypeDenoter *t1AST = parseTypeDenoter();
+      Identifier *i2AST = NULL;
+      TypeDenoter *t2AST = NULL;
+      if (check(Token::COMMA))
       {
         acceptIt();
-        Identifier* iAST = parseIdentifier();
-		accept(Token::LPAREN);
-        FormalParameterSequence* fpsAST = parseFormalParameterSequence();
-		accept(Token::RPAREN);
-		accept(Token::COLON);
-        TypeDenoter* tAST = parseTypeDenoter();
-		accept(Token::IS);
-        Expression* eAST = parseExpression();
-        finish(declarationPos);
-        declarationAST = new FuncDeclaration(iAST, fpsAST, tAST, eAST,
-          declarationPos);
+        i2AST = parseIdentifier();
+        accept(Token::COLON);
+        t2AST = parseTypeDenoter();
       }
-      break;
+      accept(Token::RPAREN);
+      accept(Token::COLON);
+      TypeDenoter *t3AST = parseTypeDenoter();
+      accept(Token::IS);
+      Expression *eAST = parseExpression();
+      finish(declarationPos);
+      if (i2AST == NULL)
+        declarationAST = new FuncUnaryOpDeclaration(opAST, i1AST, t1AST, t3AST, eAST, declarationPos);
+      else
+        declarationAST = new FuncBinOpDeclaration(opAST, i1AST, t1AST, i2AST, t2AST, t3AST, eAST, declarationPos);
+    }
+    else
+    {
+      Identifier* iAST = parseIdentifier();
+      accept(Token::LPAREN);
+      FormalParameterSequence* fpsAST = parseFormalParameterSequence();
+      accept(Token::RPAREN);
+      accept(Token::COLON);
+      TypeDenoter* tAST = parseTypeDenoter();
+      accept(Token::IS);
+      Expression* eAST = parseExpression();
+      finish(declarationPos);
+      declarationAST = new FuncDeclaration(iAST, fpsAST, tAST, eAST, declarationPos);
+    }
+  }
+  break;
 
 	case Token::TYPE:
       {
