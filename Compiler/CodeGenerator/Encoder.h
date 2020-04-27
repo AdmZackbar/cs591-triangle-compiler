@@ -97,6 +97,8 @@ Machine* mach;
   Object* visitConstFormalParameter(Object* obj, Object* o);
   Object* visitFuncFormalParameter(Object* obj, Object* o);
   Object* visitProcFormalParameter(Object* obj, Object* o);
+  Object* visitResultFormalParameter(Object* obj, Object* o);
+  Object* visitValueResultFormalParameter(Object* obj, Object* o);
   Object* visitVarFormalParameter(Object* obj, Object* o);
   Object* visitEmptyFormalParameterSequence(Object* obj, Object* o);
   Object* visitMultipleFormalParameterSequence(Object* obj, Object* o);
@@ -529,16 +531,17 @@ Object* Encoder::visitFuncBinOpDeclaration(Object* obj, Object* o)
 	int valSize = 0;
 
 	emit(mach->JUMPop, 0, mach->CBr, 0);
-	ast->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
+	ast->D->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
 
 	if (frame->level == mach->maxRoutineLevel)
     reporter->reportRestriction("can't nest routines more than 7 deep");
   else {
     Frame* frame1 = new Frame(frame->level + 1, 0);
-    argsSize += ((Integer*) ast->P1->T->visit(this, frame1))->value;
-    argsSize += ((Integer*) ast->P2->T->visit(this, frame1))->value;
-	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
-    valSize = ((Integer*) ast->E->visit(this, frame2))->value;
+    argsSize += ((Integer*) ast->P2->visit(this, frame1))->value;
+    Frame* frame2 = new Frame(frame->level + 1, argsSize);
+    argsSize += ((Integer*) ast->P1->visit(this, frame2))->value;
+	  Frame* frame3 = new Frame(frame->level + 1, mach->linkDataSize);
+    valSize = ((Integer*) ast->E->visit(this, frame3))->value;
   }
 	emit(mach->RETURNop, valSize, 0, argsSize);
   patch(jumpAddr, nextInstrAddr);
@@ -580,13 +583,13 @@ Object* Encoder::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
 	int valSize = 0;
 
 	emit(mach->JUMPop, 0, mach->CBr, 0);
-	ast->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
+	ast->D->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
 
 	if (frame->level == mach->maxRoutineLevel)
     reporter->reportRestriction("can't nest routines more than 7 deep");
   else {
     Frame* frame1 = new Frame(frame->level + 1, 0);
-    argsSize = ((Integer*) ast->P1->T->visit(this, frame1))->value;
+    argsSize = ((Integer*) ast->P1->visit(this, frame1))->value;
 	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
     valSize = ((Integer*) ast->E->visit(this, frame2))->value;
   }
@@ -611,7 +614,9 @@ Object* Encoder::visitProcDeclaration(Object* obj, Object* o) {
       Frame* frame1 = new Frame(frame->level + 1, 0);
       argsSize = ((Integer*) ast->FPS->visit(this, frame1))->value;
 	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
+      // TODO - Handle initilization of value-result parameters
       ast->C->visit(this, frame2);
+      // TODO - Handle data transfer for result and value-result parameters
     }
 	emit(mach->RETURNop, 0, 0, argsSize);
     patch(jumpAddr, nextInstrAddr);
@@ -664,7 +669,7 @@ Object* Encoder::visitVarInitDeclaration(Object* obj, Object* o)
 	emit(mach->PUSHop, 0, 0, extraSize);
 	ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
   ast->E->visit(this, o);
-  emit(mach->STOREop, extraSize, displayRegister(frame->level, frame->level), frame->size);
+  emit(mach->STOREop, extraSize, mach->LBr, frame->size);
   return new Integer(extraSize);
 }
 
@@ -728,6 +733,20 @@ Object* Encoder::visitProcFormalParameter(Object* obj, Object* o) {
     writeTableDetails(ast);
     return new Integer(argsSize);
   }
+
+Object* Encoder::visitResultFormalParameter(Object* obj, Object* o)
+{
+  ResultFormalParameter *ast = (ResultFormalParameter *)obj;
+
+  return NULL;
+}
+
+Object* Encoder::visitValueResultFormalParameter(Object* obj, Object* o)
+{
+  ValueResultFormalParameter *ast = (ValueResultFormalParameter *)obj;
+  
+  return NULL;
+}
 
 Object* Encoder::visitVarFormalParameter(Object* obj, Object* o) {
 	VarFormalParameter* ast = (VarFormalParameter*)obj;

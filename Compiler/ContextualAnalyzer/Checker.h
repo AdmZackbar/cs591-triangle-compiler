@@ -23,7 +23,6 @@ public:
   Object* visitCallCommand(Object* obj, Object* o);
   Object* visitCaseCommand(Object* obj, Object* o);
   Object* visitEmptyCommand(Object* obj, Object* o);
-  Object* visitEnumCommand(Object* obj, Object* o);
   Object* visitForCommand(Object* obj, Object* o);
   Object* visitIfCommand(Object* obj, Object* o);
   Object* visitLetCommand(Object* obj, Object* o);
@@ -53,6 +52,7 @@ public:
 
   Object* visitBinaryOperatorDeclaration(Object* obj, Object* o);
   Object* visitConstDeclaration(Object* obj, Object* o);
+  Object* visitEnumDeclaration(Object* obj, Object* o);
   Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
@@ -82,7 +82,9 @@ public:
 
   Object* visitConstFormalParameter(Object* obj, Object* o);
   Object* visitFuncFormalParameter(Object* obj, Object* o);
-  Object* visitProcFormalParameter(Object* obj, Object* o) ;
+  Object* visitProcFormalParameter(Object* obj, Object* o);
+  Object* visitResultFormalParameter(Object* obj, Object* o);
+  Object* visitValueResultFormalParameter(Object* obj, Object* o);
   Object* visitVarFormalParameter(Object* obj, Object* o);
   Object* visitEmptyFormalParameterSequence(Object* obj, Object* o);
   Object* visitMultipleFormalParameterSequence(Object* obj, Object* o);
@@ -284,20 +286,6 @@ Object* Checker::visitEmptyCommand(Object* obj, Object* o) {
     return NULL;
   }
 
-Object* Checker::visitEnumCommand(Object* obj, Object* o)
-{
-  printdetails(obj);
-  EnumCommand *ast = (EnumCommand *)obj;
-
-  ast->EnumName->visit(this, NULL);
-  for (int i=0; i<ast->I.size(); i++)
-  {
-    ast->I[i]->visit(this, NULL);
-  }
-
-  return NULL;
-}
-
 Object* Checker::visitForCommand(Object* obj, Object* o)
 {
   printdetails(obj);
@@ -387,45 +375,42 @@ Object* Checker::visitWhileCommand(Object* obj, Object* o) {
 Object* Checker::visitArrayExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	ArrayExpression* ast = (ArrayExpression*)obj;
-    TypeDenoter* elemType = (TypeDenoter*) ast->AA->visit(this, NULL);
-    IntegerLiteral* il = new IntegerLiteral((new Integer(ast->AA->elemCount))->tostring(),
-                                           ast->position);
-    ast->type = new ArrayTypeDenoter(il, elemType, ast->position);
-    return ast->type;
-  }
+  TypeDenoter* elemType = (TypeDenoter*) ast->AA->visit(this, NULL);
+  IntegerLiteral* il = new IntegerLiteral((new Integer(ast->AA->elemCount))->tostring(),
+                                          ast->position);
+  ast->type = new ArrayTypeDenoter(il, elemType, ast->position);
+  return ast->type;
+}
 
 Object* Checker::visitBinaryExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	BinaryExpression* ast = (BinaryExpression*)obj;
-    TypeDenoter* e1Type = (TypeDenoter*) ast->E1->visit(this, NULL);
-    TypeDenoter* e2Type = (TypeDenoter*) ast->E2->visit(this, NULL);
-    Declaration* binding = (Declaration*) ast->O->visit(this, NULL);
+  TypeDenoter* e1Type = (TypeDenoter*) ast->E1->visit(this, NULL);
+  TypeDenoter* e2Type = (TypeDenoter*) ast->E2->visit(this, NULL);
+  Declaration* binding = (Declaration*) ast->O->visit(this, NULL);
 
-    if (binding == NULL)
-		reportUndeclared(ast->O);
+  if (binding == NULL)
+  reportUndeclared(ast->O);
 
-    else {
-      if (! (binding->class_type() == "BINARYOPERATORDECLARATION"))
-		    reporter->reportError ("\"%\" is not a binary operator",ast->O->spelling, ast->O->position);
-		BinaryOperatorDeclaration* bbinding = (BinaryOperatorDeclaration*) binding;
+  else {
+    if (! (binding->class_type() == "BINARYOPERATORDECLARATION"))
+      reporter->reportError ("\"%\" is not a binary operator",ast->O->spelling, ast->O->position);
+    BinaryOperatorDeclaration* bbinding = (BinaryOperatorDeclaration*) binding;
 
-	  if (bbinding->ARG1 == getvariables->anyType) {
-        // this operator must be "=" or "\="
-			 if (! e1Type->equals(e2Type))
-					reporter->reportError ("incompatible argument types for \"%\"",
-                                ast->O->spelling, ast->position);
-		}
-			else if (! e1Type->equals(bbinding->ARG1))
-					reporter->reportError ("wrong argument type for \"%\"",
-                                ast->O->spelling, ast->E1->position);
-			else if (! e2Type->equals(bbinding->ARG2))
-					reporter->reportError ("wrong argument type for \"%\"",
-                                ast->O->spelling, ast->E2->position);
-		ast->type = bbinding->RES;
-		}
-
-    return ast->type;
+    if (bbinding->ARG1 == getvariables->anyType) {
+      // this operator must be "=" or "\="
+      if (! e1Type->equals(e2Type))
+        reporter->reportError ("incompatible argument types for \"%\"", ast->O->spelling, ast->position);
+    }
+    else if (! e1Type->equals(bbinding->ARG1))
+        reporter->reportError ("wrong argument type for \"%\"", ast->O->spelling, ast->E1->position);
+    else if (! e2Type->equals(bbinding->ARG2))
+        reporter->reportError ("wrong argument type for \"%\"", ast->O->spelling, ast->E2->position);
+    ast->type = bbinding->RES;
   }
+
+  return ast->type;
+}
 
 Object* Checker::visitCallExpression(Object* obj, Object* o) {
 	printdetails(obj);
@@ -561,20 +546,36 @@ Object* Checker::visitConstDeclaration(Object* obj, Object* o) {
     return NULL;
   }
 
+Object* Checker::visitEnumDeclaration(Object* obj, Object* o)
+{
+  EnumDeclaration *ast = (EnumDeclaration *)obj;
+
+  ast->EnumName->visit(this, NULL);
+  //idTable->openScope();
+  for (int i=0; i<ast->I.size(); i++)
+  {
+    ast->I[i]->visit(this, NULL);
+  }
+  //idTable->closeScope();
+
+  return NULL;
+}
+
 Object* Checker::visitFuncBinOpDeclaration(Object* obj, Object* o)
 {
   FuncBinOpDeclaration *ast = (FuncBinOpDeclaration *)obj;
   ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-  idTable->enter (ast->O->spelling, ast); // permits recursion
-  if (ast->duplicated)
+  ast->D->ARG1 = (TypeDenoter*) ast->D->ARG1->visit(this, NULL);
+  ast->D->ARG2 = (TypeDenoter*) ast->D->ARG2->visit(this, NULL);
+  ast->D->RES = (TypeDenoter*) ast->D->RES->visit(this, NULL);
+  idTable->enter (ast->O->spelling, ast->D); // permits recursion
+  if (ast->D->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->O->spelling, ast->position);
   
   idTable->openScope();
   ast->P1->visit(this, NULL);
   ast->P2->visit(this, NULL);
 
-  if (ast->P1->duplicated)
-		reporter->reportError ("duplicated formal parameter \"%\"",ast->P1->I->spelling, ast->position);
   if (ast->P2->duplicated)
 		reporter->reportError ("duplicated formal parameter \"%\"",ast->P2->I->spelling, ast->position);
 
@@ -589,34 +590,33 @@ Object* Checker::visitFuncBinOpDeclaration(Object* obj, Object* o)
 Object* Checker::visitFuncDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	FuncDeclaration* ast = (FuncDeclaration*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    idTable->enter (ast->I->spelling, ast); // permits recursion
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->I->spelling, ast); // permits recursion
 
-    if (ast->duplicated)
-      reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
 
-    idTable->openScope();
-    ast->FPS->visit(this, NULL);
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-    idTable->closeScope();
-    if (! ast->T->equals(eType))
-      reporter->reportError ("body of function \"%\" has wrong type",
-                            ast->I->spelling, ast->E->position);
-    return NULL;
-  }
+  idTable->openScope();
+  ast->FPS->visit(this, NULL);
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  idTable->closeScope();
+  if (! ast->T->equals(eType))
+    reporter->reportError ("body of function \"%\" has wrong type", ast->I->spelling, ast->E->position);
+  return NULL;
+}
 
 Object* Checker::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
 {
-  FuncBinOpDeclaration *ast = (FuncBinOpDeclaration *)obj;
+  FuncUnaryOpDeclaration *ast = (FuncUnaryOpDeclaration *)obj;
   ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-  idTable->enter (ast->O->spelling, ast); // permits recursion
-  if (ast->duplicated)
+  ast->D->ARG = (TypeDenoter*) ast->D->ARG->visit(this, NULL);
+  ast->D->RES = (TypeDenoter*) ast->D->RES->visit(this, NULL);
+  idTable->enter (ast->O->spelling, ast->D); // permits recursion
+  if (ast->D->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->O->spelling, ast->position);
   
   idTable->openScope();
   ast->P1->visit(this, NULL);
-  if (ast->P1->duplicated)
-		reporter->reportError ("duplicated formal parameter \"%\"",ast->P1->I->spelling, ast->position);
 
   TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
   if (!ast->T->equals(eType))
@@ -752,41 +752,67 @@ Object* Checker::visitSingleRecordAggregate(Object* obj, Object* o) {
 Object* Checker::visitConstFormalParameter(Object* obj, Object* o) {
 	printdetails(obj);
 	ConstFormalParameter* ast = (ConstFormalParameter*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    idTable->enter(ast->I->spelling, ast);
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter(ast->I->spelling, ast);
 
-    if (ast->duplicated)
-      reporter->reportError ("duplicated formal parameter \"%\"",ast->I->spelling, ast->position);
+  if (ast->duplicated)
+    reporter->reportError ("duplicated formal parameter \"%\"",ast->I->spelling, ast->position);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitFuncFormalParameter(Object* obj, Object* o) {
 	printdetails(obj);
-    FuncFormalParameter* ast = (FuncFormalParameter*)obj;
-    idTable->openScope();
-    ast->FPS->visit(this, NULL);
-    idTable->closeScope();
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    idTable->enter (ast->I->spelling, ast);
+  FuncFormalParameter* ast = (FuncFormalParameter*)obj;
+  idTable->openScope();
+  ast->FPS->visit(this, NULL);
+  idTable->closeScope();
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->I->spelling, ast);
 
-    if (ast->duplicated)
-		reporter->reportError ("duplicated formal parameter \"%\"", ast->I->spelling, ast->position);
-    return NULL;
-  }
+  if (ast->duplicated)
+  reporter->reportError ("duplicated formal parameter \"%\"", ast->I->spelling, ast->position);
+  return NULL;
+}
 
 Object* Checker::visitProcFormalParameter(Object* obj, Object* o) {
 	printdetails(obj);
 	ProcFormalParameter* ast = (ProcFormalParameter*)obj;
-    idTable->openScope();
-    ast->FPS->visit(this, NULL);
-    idTable->closeScope();
-    idTable->enter (ast->I->spelling, ast);
+  idTable->openScope();
+  ast->FPS->visit(this, NULL);
+  idTable->closeScope();
+  idTable->enter (ast->I->spelling, ast);
 
-    if (ast->duplicated)
-      reporter->reportError ("duplicated formal parameter \"%\"",ast->I->spelling, ast->position);
-    return NULL;
-  }
+  if (ast->duplicated)
+    reporter->reportError ("duplicated formal parameter \"%\"",ast->I->spelling, ast->position);
+  return NULL;
+}
+
+Object* Checker::visitResultFormalParameter(Object* obj, Object* o)
+{
+  ResultFormalParameter *ast = (ResultFormalParameter *)obj;
+
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter(ast->I->spelling, ast);
+
+  if (ast->duplicated)
+    reporter->reportError ("duplicated formal parameter \"%\"", ast->I->spelling, ast->position);
+
+  return NULL;
+}
+
+Object* Checker::visitValueResultFormalParameter(Object* obj, Object* o)
+{
+  ValueResultFormalParameter *ast = (ValueResultFormalParameter *)obj;
+
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter(ast->I->spelling, ast);
+
+  if (ast->duplicated)
+    reporter->reportError ("duplicated formal parameter \"%\"", ast->I->spelling, ast->position);
+  
+  return NULL;
+}
 
 Object* Checker::visitVarFormalParameter(Object* obj, Object* o) {
 	printdetails(obj);

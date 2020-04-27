@@ -42,6 +42,7 @@ public:	int	firstReservedWord,lastReservedWord;
 	  IN_IN,
     LET,
     OF,
+    OUT,
     PACKAGE,
     PROC,
     REC,
@@ -132,7 +133,7 @@ public:	int	firstReservedWord,lastReservedWord;
 
 
  string Token::spell (int kind) {
-string tokenTable[45]= {"<int>",
+string tokenTable[46]= {"<int>",
      "<char>",
       "<identifier>",
       "<operator>",
@@ -151,6 +152,7 @@ string tokenTable[45]= {"<int>",
       "in",
       "let",
       "of",
+      "out",
       "package",
       "proc",
       "rec",

@@ -9,7 +9,6 @@ public:
 	virtual Object* visitCallCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitCaseCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitEmptyCommand(Object* ast, Object* o){ return NULL; }
-	virtual Object* visitEnumCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitForCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIfCommand(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitLetCommand(Object* ast, Object* o){ return NULL; }
@@ -33,6 +32,7 @@ public:
 	// Declarations
 	virtual Object* visitBinaryOperatorDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitConstDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitEnumDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncBinOpDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncUnaryOpDeclaration(Object* ast, Object* o){ return NULL; }
@@ -55,6 +55,8 @@ public:
 	virtual Object* visitConstFormalParameter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncFormalParameter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitProcFormalParameter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitResultFormalParameter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitValueResultFormalParameter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitVarFormalParameter(Object* ast, Object* o){ return NULL; }
 	
 	virtual Object* visitEmptyFormalParameterSequence(Object* ast, Object* o){ return NULL; }
@@ -76,6 +78,7 @@ public:
 	virtual Object* visitArrayTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitBoolTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitCharTypeDenoter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitEnumTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitErrorTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSimpleTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntTypeDenoter(Object* ast, Object* o){ return NULL; }

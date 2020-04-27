@@ -245,162 +245,138 @@ Command* Parser::parseCommand() {
   }
 
 Command* Parser::parseSingleCommand() {
-    Command* commandAST = NULL; // in case there's a syntactic error
-    SourcePosition* commandPos = new SourcePosition();
-    start(commandPos);
+  Command* commandAST = NULL; // in case there's a syntactic error
+  SourcePosition* commandPos = new SourcePosition();
+  start(commandPos);
 
-    switch (currentToken->kind) {
+  switch (currentToken->kind) {
 
 	case Token::IDENTIFIER:
-      {
-        Identifier* iAST = parseIdentifier();
+  {
+    Identifier* iAST = parseIdentifier();
 		if (currentToken->kind == Token::LPAREN) {
-          acceptIt();
-          ActualParameterSequence* apsAST = parseActualParameterSequence();
-		  accept(Token::RPAREN);
-          finish(commandPos);
-          commandAST = new CallCommand(iAST, apsAST, commandPos);
-
-        } else {
-
-          Vname* vAST = parseRestOfVname(iAST);
-		  accept(Token::BECOMES);
-          Expression* eAST = parseExpression();
-          finish(commandPos);
-          commandAST = new AssignCommand(vAST, eAST, commandPos);
-        }
-      }
-      break;
-
-	case Token::BEGIN:
       acceptIt();
-      commandAST = parseCommand();
-	  accept(Token::END);
-      break;
-
-	case Token::LET:
-      {
-        acceptIt();
-        Declaration* dAST = parseDeclaration();
-		accept(Token::IN_IN);
-        Command* cAST = parseSingleCommand();
-        finish(commandPos);
-        commandAST = new LetCommand(dAST, cAST, commandPos);
-      }
-      break;
-
-	case Token::IF:
-      {
-        acceptIt();
-        Expression* eAST = parseExpression();
-		accept(Token::THEN);
-        Command* c1AST = parseSingleCommand();
-		accept(Token::ELSE);
-        Command* c2AST = parseSingleCommand();
-        finish(commandPos);
-        commandAST = new IfCommand(eAST, c1AST, c2AST, commandPos);
-      }
-      break;
-
-	case Token::WHILE:
-      {
-        acceptIt();
-        Expression* eAST = parseExpression();
-		accept(Token::DO);
-        Command* cAST = parseSingleCommand();
-        finish(commandPos);
-        commandAST = new WhileCommand(eAST, cAST, commandPos);
-      }
-      break;
-  
-  case Token::REPEAT:
-    {
-      acceptIt();
-      Command *cAST = parseSingleCommand();
-      accept(Token::UNTIL);
-      Expression *eAST = parseExpression();
-      finish(commandPos);
-      commandAST = new RepeatCommand(cAST, eAST, commandPos);
-    }
-    break;
-
-  case Token::FOR:
-    {
-      acceptIt();
-      Identifier *iAST = parseIdentifier();
-      accept(Token::FROM);
-      Expression *e1AST = parseExpression();
-      ConstDeclaration *dAST = new ConstDeclaration(iAST, e1AST, NULL);
-      accept(Token::TO);
-      Expression *e2AST = parseExpression();
-      accept(Token::DO);
-      Command *cAST = parseSingleCommand();
-      finish(commandPos);
-      commandAST = new ForCommand(dAST, e2AST, cAST, commandPos);
-    }
-    break;
-
-  case Token::CASE:
-    {
-      acceptIt();
-      Expression *eAST = parseExpression();
-      accept(Token::OF);
-      std::vector<IntegerLiteral *> iASTs;
-      std::vector<Command *> cASTs;
-      while (check(Token::INTLITERAL))
-      {
-        iASTs.push_back(parseIntegerLiteral());
-        accept(Token::COLON);
-        cASTs.push_back(parseSingleCommand());
-        accept(Token::SEMICOLON);
-      }
-      accept(Token::ELSE);
-      accept(Token::COLON);
-      Command *elseAST = parseSingleCommand();
-      finish(commandPos);
-      commandAST = new CaseCommand(eAST, iASTs, cASTs, elseAST, commandPos);
-    }
-    break;
-
-	case Token::ENUM:
-    {
-      acceptIt();
-      accept(Token::TYPE);
-      Identifier *nameAST = parseIdentifier();
-      accept(Token::IS);
-      accept(Token::LPAREN);
-      std::vector<Identifier *> iASTs;
-      iASTs.push_back(parseIdentifier());
-      while (check(Token::COMMA))
-      {
-        acceptIt();
-        iASTs.push_back(parseIdentifier());
-      }
+      ActualParameterSequence* apsAST = parseActualParameterSequence();
       accept(Token::RPAREN);
       finish(commandPos);
-      commandAST = new EnumCommand(nameAST, iASTs, commandPos);
+      commandAST = new CallCommand(iAST, apsAST, commandPos);
     }
+    else {
+      Vname* vAST = parseRestOfVname(iAST);
+		  accept(Token::BECOMES);
+      Expression* eAST = parseExpression();
+      finish(commandPos);
+      commandAST = new AssignCommand(vAST, eAST, commandPos);
+    }
+  }
+  break;
+
+	case Token::BEGIN:
+    acceptIt();
+    commandAST = parseCommand();
+	  accept(Token::END);
     break;
+
+	case Token::LET:
+  {
+    acceptIt();
+    Declaration* dAST = parseDeclaration();
+		accept(Token::IN_IN);
+    Command* cAST = parseSingleCommand();
+    finish(commandPos);
+    commandAST = new LetCommand(dAST, cAST, commandPos);
+  }
+  break;
+
+	case Token::IF:
+  {
+    acceptIt();
+    Expression* eAST = parseExpression();
+		accept(Token::THEN);
+    Command* c1AST = parseSingleCommand();
+		accept(Token::ELSE);
+    Command* c2AST = parseSingleCommand();
+    finish(commandPos);
+    commandAST = new IfCommand(eAST, c1AST, c2AST, commandPos);
+  }
+  break;
+
+	case Token::WHILE:
+  {
+    acceptIt();
+    Expression* eAST = parseExpression();
+		accept(Token::DO);
+    Command* cAST = parseSingleCommand();
+    finish(commandPos);
+    commandAST = new WhileCommand(eAST, cAST, commandPos);
+  }
+  break;
+  
+  case Token::REPEAT:
+  {
+    acceptIt();
+    Command *cAST = parseSingleCommand();
+    accept(Token::UNTIL);
+    Expression *eAST = parseExpression();
+    finish(commandPos);
+    commandAST = new RepeatCommand(cAST, eAST, commandPos);
+  }
+  break;
+
+  case Token::FOR:
+  {
+    acceptIt();
+    Identifier *iAST = parseIdentifier();
+    accept(Token::FROM);
+    Expression *e1AST = parseExpression();
+    ConstDeclaration *dAST = new ConstDeclaration(iAST, e1AST, NULL);
+    accept(Token::TO);
+    Expression *e2AST = parseExpression();
+    accept(Token::DO);
+    Command *cAST = parseSingleCommand();
+    finish(commandPos);
+    commandAST = new ForCommand(dAST, e2AST, cAST, commandPos);
+  }
+  break;
+
+  case Token::CASE:
+  {
+    acceptIt();
+    Expression *eAST = parseExpression();
+    accept(Token::OF);
+    std::vector<IntegerLiteral *> iASTs;
+    std::vector<Command *> cASTs;
+    while (check(Token::INTLITERAL))
+    {
+      iASTs.push_back(parseIntegerLiteral());
+      accept(Token::COLON);
+      cASTs.push_back(parseSingleCommand());
+      accept(Token::SEMICOLON);
+    }
+    accept(Token::ELSE);
+    accept(Token::COLON);
+    Command *elseAST = parseSingleCommand();
+    finish(commandPos);
+    commandAST = new CaseCommand(eAST, iASTs, cASTs, elseAST, commandPos);
+  }
+  break;
   
   case Token::SEMICOLON:
 	case Token::END:
 	case Token::ELSE:
 	case Token::IN_IN:
 	case Token::EOT:
+  finish(commandPos);
+  commandAST = new EmptyCommand(commandPos);
+  break;
 
-      finish(commandPos);
-      commandAST = new EmptyCommand(commandPos);
-      break;
-
-    default:
-      syntacticError("\"%\" cannot start a command",
-        currentToken->spelling);
-      break;
-		
-    }
-
-    return commandAST;
+  default:
+    syntacticError("\"%\" cannot start a command", currentToken->spelling);
+    break;
   }
+
+  return commandAST;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -689,19 +665,39 @@ Declaration* Parser::parseSingleDeclaration() {
   }
   break;
 
+  case Token::ENUM:
+  {
+    acceptIt();
+    accept(Token::TYPE);
+    Identifier *nameAST = parseIdentifier();
+    accept(Token::IS);
+    accept(Token::LPAREN);
+    std::vector<Identifier *> iASTs;
+    iASTs.push_back(parseIdentifier());
+    while (check(Token::COMMA))
+    {
+      acceptIt();
+      iASTs.push_back(parseIdentifier());
+    }
+    accept(Token::RPAREN);
+    finish(declarationPos);
+    declarationAST = new EnumDeclaration(nameAST, iASTs, declarationPos);
+  }
+  break;
+
 	case Token::PROC:
-      {
-        acceptIt();
-        Identifier* iAST = parseIdentifier();
+  {
+    acceptIt();
+    Identifier* iAST = parseIdentifier();
 		accept(Token::LPAREN);
-        FormalParameterSequence* fpsAST = parseFormalParameterSequence();
+    FormalParameterSequence* fpsAST = parseFormalParameterSequence();
 		accept(Token::RPAREN);
 		accept(Token::IS);
-        Command* cAST = parseSingleCommand();
-        finish(declarationPos);
-        declarationAST = new ProcDeclaration(iAST, fpsAST, cAST, declarationPos);
-      }
-      break;
+    Command* cAST = parseSingleCommand();
+    finish(declarationPos);
+    declarationAST = new ProcDeclaration(iAST, fpsAST, cAST, declarationPos);
+  }
+  break;
 
 	case Token::FUNC:
   {
@@ -777,104 +773,127 @@ Declaration* Parser::parseSingleDeclaration() {
 ///////////////////////////////////////////////////////////////////////////////
 
 FormalParameterSequence* Parser::parseFormalParameterSequence(){
-    FormalParameterSequence* formalsAST;
+  FormalParameterSequence* formalsAST;
 
-    SourcePosition* formalsPos = new SourcePosition();
+  SourcePosition* formalsPos = new SourcePosition();
 
-    start(formalsPos);
-	if (currentToken->kind == Token::RPAREN) {
-      finish(formalsPos);
-      formalsAST = new EmptyFormalParameterSequence(formalsPos);
-
-    } else {
-      formalsAST = parseProperFormalParameterSequence();
-    }
-    return formalsAST;
+  start(formalsPos);
+  if (currentToken->kind == Token::RPAREN) {
+    finish(formalsPos);
+    formalsAST = new EmptyFormalParameterSequence(formalsPos);
+  } else {
+    formalsAST = parseProperFormalParameterSequence();
   }
+  return formalsAST;
+}
 
 FormalParameterSequence* Parser::parseProperFormalParameterSequence(){
-    FormalParameterSequence* formalsAST = NULL; // in case there's a syntactic error;
+  FormalParameterSequence* formalsAST = NULL; // in case there's a syntactic error;
 
-    SourcePosition* formalsPos = new SourcePosition();
-    start(formalsPos);
-    FormalParameter* fpAST = parseFormalParameter();
-	if (currentToken->kind == Token::COMMA) {
-      acceptIt();
-      FormalParameterSequence* fpsAST = parseProperFormalParameterSequence();
-      finish(formalsPos);
-      formalsAST = new MultipleFormalParameterSequence(fpAST, fpsAST,
-        formalsPos);
-
-    } else {
-      finish(formalsPos);
-      formalsAST = new SingleFormalParameterSequence(fpAST, formalsPos);
-    }
-    return formalsAST;
+  SourcePosition* formalsPos = new SourcePosition();
+  start(formalsPos);
+  FormalParameter* fpAST = parseFormalParameter();
+  if (currentToken->kind == Token::COMMA) {
+    acceptIt();
+    FormalParameterSequence* fpsAST = parseProperFormalParameterSequence();
+    finish(formalsPos);
+    formalsAST = new MultipleFormalParameterSequence(fpAST, fpsAST,
+      formalsPos);
+  } else {
+    finish(formalsPos);
+    formalsAST = new SingleFormalParameterSequence(fpAST, formalsPos);
   }
+  return formalsAST;
+}
 
 FormalParameter* Parser::parseFormalParameter(){
-    FormalParameter* formalAST = NULL; // in case there's a syntactic error;
+  FormalParameter* formalAST = NULL; // in case there's a syntactic error;
 
-    SourcePosition* formalPos = new SourcePosition();
-    start(formalPos);
+  SourcePosition* formalPos = new SourcePosition();
+  start(formalPos);
 
-    switch (currentToken->kind) {
+  switch (currentToken->kind) {
 
 	case Token::IDENTIFIER:
-      {
-        Identifier* iAST = parseIdentifier();
+  {
+    Identifier* iAST = parseIdentifier();
 		accept(Token::COLON);
+    if (check(Token::IN_IN))
+    {
+      acceptIt();
+      if (check(Token::OUT))  // IN OUT - Value-Result Param
+      {
+        acceptIt();
+        TypeDenoter* tAST = parseTypeDenoter();
+        finish(formalPos);
+        formalAST = new ValueResultFormalParameter(iAST, tAST, formalPos);
+      }
+      else  // IN - Value Param(Const)
+      {
         TypeDenoter* tAST = parseTypeDenoter();
         finish(formalPos);
         formalAST = new ConstFormalParameter(iAST, tAST, formalPos);
       }
-      break;
+    }
+    else if (check(Token::OUT)) // OUT - Result Param
+    {
+      acceptIt();
+      TypeDenoter* tAST = parseTypeDenoter();
+      finish(formalPos);
+      formalAST = new ResultFormalParameter(iAST, tAST, formalPos);
+    }
+    else  // No keyword - Value Param(Const)
+    {
+      TypeDenoter* tAST = parseTypeDenoter();
+      finish(formalPos);
+      formalAST = new ConstFormalParameter(iAST, tAST, formalPos);
+    }
+  }
+  break;
 
 	case Token::VAR:
-      {
-        acceptIt();
-        Identifier* iAST = parseIdentifier();
+  {
+    acceptIt();
+    Identifier* iAST = parseIdentifier();
 		accept(Token::COLON);
-        TypeDenoter* tAST = parseTypeDenoter();
-        finish(formalPos);
-        formalAST = new VarFormalParameter(iAST, tAST, formalPos);
-      }
-      break;
+    TypeDenoter* tAST = parseTypeDenoter();
+    finish(formalPos);
+    formalAST = new VarFormalParameter(iAST, tAST, formalPos);
+  }
+  break;
 
 	case Token::PROC:
-      {
-        acceptIt();
-        Identifier* iAST = parseIdentifier();
+  {
+    acceptIt();
+    Identifier* iAST = parseIdentifier();
 		accept(Token::LPAREN);
-        FormalParameterSequence* fpsAST = parseFormalParameterSequence();
+    FormalParameterSequence* fpsAST = parseFormalParameterSequence();
 		accept(Token::RPAREN);
-        finish(formalPos);
-        formalAST = new ProcFormalParameter(iAST, fpsAST, formalPos);
-      }
-      break;
+    finish(formalPos);
+    formalAST = new ProcFormalParameter(iAST, fpsAST, formalPos);
+  }
+  break;
 
 	case Token::FUNC:
-      {
-        acceptIt();
-        Identifier* iAST = parseIdentifier();
+  {
+    acceptIt();
+    Identifier* iAST = parseIdentifier();
 		accept(Token::LPAREN);
-        FormalParameterSequence* fpsAST = parseFormalParameterSequence();
+    FormalParameterSequence* fpsAST = parseFormalParameterSequence();
 		accept(Token::RPAREN);
 		accept(Token::COLON);
-        TypeDenoter* tAST = parseTypeDenoter();
-        finish(formalPos);
-        formalAST = new FuncFormalParameter(iAST, fpsAST, tAST, formalPos);
-      }
-      break;
-
-    default:
-      syntacticError("\"%\" cannot start a formal parameter",
-        currentToken->spelling);
-      break;
-
-    }
-    return formalAST;
+    TypeDenoter* tAST = parseTypeDenoter();
+    finish(formalPos);
+    formalAST = new FuncFormalParameter(iAST, fpsAST, tAST, formalPos);
   }
+  break;
+
+  default:
+    syntacticError("\"%\" cannot start a formal parameter", currentToken->spelling);
+    break;
+  }
+  return formalAST;
+}
 
 
 ActualParameterSequence* Parser::parseActualParameterSequence(){

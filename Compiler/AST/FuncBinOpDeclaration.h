@@ -2,7 +2,7 @@
 #define _FuncBinOpDeclaration
 
 #include "./AST/Operator.h"
-#include "./AST/VarFormalParameter.h"
+#include "./AST/ConstFormalParameter.h"
 #include "./AST/BinaryOperatorDeclaration.h"
 #include "./AST/Declaration.h"
 #include "./AST/Identifier.h"
@@ -16,7 +16,7 @@ class FuncBinOpDeclaration : public Declaration
 {
 public:
 	Operator *O;
-	VarFormalParameter *P1, *P2;
+	ConstFormalParameter *P1, *P2;
 	BinaryOperatorDeclaration *D;
 	TypeDenoter *T;
 	Expression* E;
@@ -25,8 +25,8 @@ public:
 						  TypeDenoter* t3AST, Expression* eAST, SourcePosition* thePosition) : Declaration(thePosition) 
 	{
 		O = opAST;
-		P1 = new VarFormalParameter(i1AST, t1AST, thePosition);
-		P2 = new VarFormalParameter(i2AST, t2AST, thePosition);
+		P1 = new ConstFormalParameter(i1AST, t1AST, thePosition);
+		P2 = new ConstFormalParameter(i2AST, t2AST, thePosition);
 		D = new BinaryOperatorDeclaration(opAST, t1AST, t2AST, t3AST, thePosition);
 		T = t3AST;
 		E = eAST;

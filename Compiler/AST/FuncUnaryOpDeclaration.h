@@ -3,6 +3,7 @@
 
 #include "./AST/Operator.h"
 #include "./AST/VarFormalParameter.h"
+#include "./AST/UnaryOperatorDeclaration.h"
 #include "./AST/Declaration.h"
 #include "./AST/Identifier.h"
 #include "./AST/TypeDenoter.h"
@@ -16,6 +17,7 @@ class FuncUnaryOpDeclaration : public Declaration
 public:
 	Operator *O;
 	VarFormalParameter *P1;
+	UnaryOperatorDeclaration *D;
 	TypeDenoter *T;
 	Expression* E;
 
@@ -23,6 +25,7 @@ public:
 	{
 		O = opAST;
 		P1 = new VarFormalParameter(i1AST, t1AST, thePosition);
+		D = new UnaryOperatorDeclaration(opAST, t1AST, t2AST, thePosition);
 		T = t2AST;
 		E = eAST;
 	}
