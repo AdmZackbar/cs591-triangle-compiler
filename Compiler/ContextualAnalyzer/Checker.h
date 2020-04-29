@@ -44,6 +44,7 @@ public:
   Object* visitIntegerExpression(Object* obj, Object* o);
   Object* visitLetExpression(Object* obj, Object* o);
   Object* visitRecordExpression(Object* obj, Object* o);
+  Object* visitStringExpression(Object* obj, Object* o);
   Object* visitUnaryExpression(Object* obj, Object* o);
   Object* visitVnameExpression(Object* obj, Object* o) ;
 
@@ -56,7 +57,8 @@ public:
   Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
-  Object* visitProcDeclaration(Object* obj, Object* o) ;
+  Object* visitPackageDeclaration(Object* obj, Object* o);
+  Object* visitProcDeclaration(Object* obj, Object* o);
   Object* visitSequentialDeclaration(Object* obj, Object* o);
   Object* visitTypeDeclaration(Object* obj, Object* o);
   Object* visitUnaryOperatorDeclaration(Object* obj, Object* o);
@@ -107,6 +109,7 @@ public:
 
   Object* visitAnyTypeDenoter(Object* obj, Object* o) ;
   Object* visitArrayTypeDenoter(Object* obj, Object* o);
+  Object* visitStringTypeDenoter(Object* obj, Object* o);
   Object* visitBoolTypeDenoter(Object* obj, Object* o) ;
   Object* visitCharTypeDenoter(Object* obj, Object* o) ;
   Object* visitErrorTypeDenoter(Object* obj, Object* o);
@@ -121,6 +124,7 @@ public:
   Object* visitIdentifier(Object* obj, Object* o) ;
   Object* visitIntegerLiteral(Object* obj, Object* o);
   Object* visitOperator(Object* obj, Object* o);
+  Object* visitStringLiteral(Object* obj, Object* o);
 
   // Value-or-variable names
 
@@ -144,6 +148,7 @@ public:
   // given object.
 
   Object* visitDotVname(Object* obj, Object* o);
+  Object* visitPackageVname(Object* obj, Object* o);
   Object* visitSimpleVname(Object* obj, Object* o);
   Object* visitSubscriptVname(Object* obj, Object* o);
 
@@ -308,30 +313,27 @@ Object* Checker::visitForCommand(Object* obj, Object* o)
 Object* Checker::visitIfCommand(Object* obj, Object* o) {
 	printdetails(obj);
 	IfCommand* ast = (IfCommand*)obj;
-    TypeDenoter* eType = (TypeDenoter*)ast->E->visit(this, NULL);
+  TypeDenoter* eType = (TypeDenoter*)ast->E->visit(this, NULL);
 
 	if (! eType->equals(getvariables->booleanType))
-      reporter->reportError("Boolean expression expected here", "", ast->E->position);
+    reporter->reportError("Boolean expression expected here", "", ast->E->position);
 
-    ast->C1->visit(this, NULL);
-    ast->C2->visit(this, NULL);
+  ast->C1->visit(this, NULL);
+  ast->C2->visit(this, NULL);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitLetCommand(Object* obj, Object* o) {
 	printdetails(obj);
 	LetCommand* ast = (LetCommand*)obj;
-    idTable->openScope();
-    ast->D->visit(this, NULL);
+  idTable->openScope();
+  ast->D->visit(this, NULL);
 	//printf("THIS IS AT THE LET COMMAND\n",ast->C->class_type().c_str());
-	
-
-
-    ast->C->visit(this, NULL);
-    idTable->closeScope();
-    return NULL;
-  }
+  ast->C->visit(this, NULL);
+  idTable->closeScope();
+  return NULL;
+}
 
 Object* Checker::visitRepeatCommand(Object* obj, Object* o)
 {
@@ -403,9 +405,9 @@ Object* Checker::visitBinaryExpression(Object* obj, Object* o) {
         reporter->reportError ("incompatible argument types for \"%\"", ast->O->spelling, ast->position);
     }
     else if (! e1Type->equals(bbinding->ARG1))
-        reporter->reportError ("wrong argument type for \"%\"", ast->O->spelling, ast->E1->position);
+      reporter->reportError ("wrong argument type for \"%\"", ast->O->spelling, ast->E1->position);
     else if (! e2Type->equals(bbinding->ARG2))
-        reporter->reportError ("wrong argument type for \"%\"", ast->O->spelling, ast->E2->position);
+      reporter->reportError ("wrong argument type for \"%\"", ast->O->spelling, ast->E2->position);
     ast->type = bbinding->RES;
   }
 
@@ -415,115 +417,123 @@ Object* Checker::visitBinaryExpression(Object* obj, Object* o) {
 Object* Checker::visitCallExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	CallExpression* ast = (CallExpression*)obj;
-    Declaration* binding = (Declaration*) ast->I->visit(this, NULL);
+  Declaration* binding = (Declaration*) ast->I->visit(this, NULL);
 
-    if (binding == NULL) {
+  if (binding == NULL) {
 		reportUndeclared(ast->I);
 		ast->type = getvariables->errorType;
-		} 
+  } 
 
 	else if (binding->class_type() == "FUNCDECLARATION" ) {
 		ast->APS->visit(this, ((FuncDeclaration*) binding)->FPS);
 		ast->type = ((FuncDeclaration*) binding)->T;
-		}
+  }
 
 	else if (binding->class_type() == "FUNCFORMALPARAMETER") {
 		ast->APS->visit(this, ((FuncFormalParameter*) binding)->FPS);
 		ast->type = ((FuncFormalParameter*) binding)->T;
-		}
-	else
-      reporter->reportError("\"%\" is not a function identifier",
-                           ast->I->spelling, ast->I->position);
-    return ast->type;
   }
+	else
+    reporter->reportError("\"%\" is not a function identifier", ast->I->spelling, ast->I->position);
+  return ast->type;
+}
 
 Object* Checker::visitCharacterExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	CharacterExpression* ast = (CharacterExpression*)obj;
 	ast->type = getvariables->charType;
-    return ast->type;
-  }
+  return ast->type;
+}
 
 Object* Checker::visitEmptyExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	EmptyExpression* ast = (EmptyExpression*)obj;
-    ast->type = NULL;
-    return ast->type;
-  }
+  ast->type = NULL;
+  return ast->type;
+}
 
 Object* Checker::visitIfExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	IfExpression* ast = (IfExpression*)obj;
-    TypeDenoter* e1Type = (TypeDenoter*)ast->E1->visit(this, NULL);
+  TypeDenoter* e1Type = (TypeDenoter*)ast->E1->visit(this, NULL);
 
 	if (!e1Type->equals(getvariables->booleanType))
-		  reporter->reportError ("Boolean expression expected here", "",ast->E1->position);
+    reporter->reportError ("Boolean expression expected here", "",ast->E1->position);
 
-    TypeDenoter* e2Type = (TypeDenoter*) ast->E2->visit(this, NULL);
-    TypeDenoter* e3Type = (TypeDenoter*) ast->E3->visit(this, NULL);
+  TypeDenoter* e2Type = (TypeDenoter*) ast->E2->visit(this, NULL);
+  TypeDenoter* e3Type = (TypeDenoter*) ast->E3->visit(this, NULL);
 
-    if (! e2Type->equals(e3Type))
-		  reporter->reportError ("incompatible limbs in if-expression", "", ast->position);
+  if (! e2Type->equals(e3Type))
+    reporter->reportError ("incompatible limbs in if-expression", "", ast->position);
 
-    ast->type = e2Type;
+  ast->type = e2Type;
 
-    return ast->type;
-  }
+  return ast->type;
+}
 
 Object* Checker::visitIntegerExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	IntegerExpression* ast = (IntegerExpression*)obj;
 	ast->type = getvariables->integerType;
-    return ast->type;
-  }
+  return ast->type;
+}
 
 Object* Checker::visitLetExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	LetExpression* ast = (LetExpression*)obj;
-    idTable->openScope();
-    ast->D->visit(this, NULL);
-    ast->type = (TypeDenoter*) ast->E->visit(this, NULL);
-    idTable->closeScope();
-    return ast->type;
-  }
+  idTable->openScope();
+  ast->D->visit(this, NULL);
+  ast->type = (TypeDenoter*) ast->E->visit(this, NULL);
+  idTable->closeScope();
+  return ast->type;
+}
 
 Object* Checker::visitRecordExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	RecordExpression* ast = (RecordExpression*)obj;
-    FieldTypeDenoter* rType = (FieldTypeDenoter*) ast->RA->visit(this, NULL);
-    ast->type = new RecordTypeDenoter(rType, ast->position);
-    return ast->type;
-  }
+  FieldTypeDenoter* rType = (FieldTypeDenoter*) ast->RA->visit(this, NULL);
+  ast->type = new RecordTypeDenoter(rType, ast->position);
+  return ast->type;
+}
+
+Object* Checker::visitStringExpression(Object* obj, Object* o)
+{
+  StringExpression *ast = (StringExpression *)obj;
+
+  ast->type = (StringTypeDenoter *)ast->SL->visit(this, NULL);
+
+  return ast->type;
+}
 
 Object* Checker::visitUnaryExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	UnaryExpression* ast = (UnaryExpression*)obj;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-    Declaration* binding = (Declaration*) ast->O->visit(this, NULL);
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  Declaration* binding = (Declaration*) ast->O->visit(this, NULL);
 
-    if (binding == NULL) {
-		  reportUndeclared(ast->O);
-		  ast->type = getvariables->errorType;
-		}
+  if (binding == NULL) {
+    reportUndeclared(ast->O);
+    ast->type = getvariables->errorType;
+  }
 	else if (! (binding->class_type() == "UNARYOPERATORDECLARATION"))
-			reporter->reportError ("\"%\" is not a unary operator",ast->O->spelling, ast->O->position);
-    else {
-			UnaryOperatorDeclaration* ubinding = (UnaryOperatorDeclaration*) binding;
+    reporter->reportError ("\"%\" is not a unary operator",ast->O->spelling, ast->O->position);
+  else {
+    UnaryOperatorDeclaration* ubinding = (UnaryOperatorDeclaration*) binding;
 
-			if (! eType->equals(ubinding->ARG))
-				reporter->reportError ("wrong argument type for \"%\"",ast->O->spelling, ast->O->position);
-				ast->type = ubinding->RES;
+    if (! eType->equals(ubinding->ARG))
+      reporter->reportError ("wrong argument type for \"%\"",ast->O->spelling, ast->O->position);
+    ast->type = ubinding->RES;
 	}
 
-    return ast->type;
-  }
+  return ast->type;
+}
 
 Object* Checker::visitVnameExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	VnameExpression* ast = (VnameExpression*)obj;
-    ast->type = (TypeDenoter*) ast->V->visit(this, NULL);
-    return ast->type;
-  }
+  ast->type = (TypeDenoter*) ast->V->visit(this, NULL);
+  return ast->type;
+}
 
   // Declarations
 
@@ -531,26 +541,26 @@ Object* Checker::visitVnameExpression(Object* obj, Object* o) {
 Object* Checker::visitBinaryOperatorDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	BinaryOperatorDeclaration* ast = (BinaryOperatorDeclaration*)obj;
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitConstDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	ConstDeclaration* ast = (ConstDeclaration*)obj;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-    idTable->enter(ast->I->spelling, ast);
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  idTable->enter(ast->I->spelling, ast);
 
-    if (ast->duplicated)
-      reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitEnumDeclaration(Object* obj, Object* o)
 {
   EnumDeclaration *ast = (EnumDeclaration *)obj;
 
-  ast->EnumName->visit(this, NULL);
+  //ast->EnumName->visit(this, NULL);
   //idTable->openScope();
   for (int i=0; i<ast->I.size(); i++)
   {
@@ -626,29 +636,44 @@ Object* Checker::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
   return NULL;
 }
 
+Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
+{
+  PackageDeclaration *ast = (PackageDeclaration *)obj;
+  IdentificationTable *oldTable = idTable;
+  idTable = new IdentificationTable();
+
+  ast->D1->visit(this, NULL);
+  ast->Table = idTable;
+
+  // Make sure to reset the idTable to the main one
+  idTable = oldTable;
+
+  return NULL;
+}
+
 Object* Checker::visitProcDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	ProcDeclaration* ast = (ProcDeclaration*)obj;
-    idTable->enter (ast->I->spelling, ast); // permits recursion
+  idTable->enter (ast->I->spelling, ast); // permits recursion
 
-    if (ast->duplicated)
-      reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
 
-    idTable->openScope();
-    ast->FPS->visit(this, NULL);
-    ast->C->visit(this, NULL);
-    idTable->closeScope();
+  idTable->openScope();
+  ast->FPS->visit(this, NULL);
+  ast->C->visit(this, NULL);
+  idTable->closeScope();
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitSequentialDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	SequentialDeclaration* ast= (SequentialDeclaration*)obj;
-    ast->D1->visit(this, NULL);
-    ast->D2->visit(this, NULL);
-    return NULL;
-  }
+  ast->D1->visit(this, NULL);
+  ast->D2->visit(this, NULL);
+  return NULL;
+}
 
 Object* Checker::visitTypeDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
@@ -657,27 +682,27 @@ Object* Checker::visitTypeDeclaration(Object* obj, Object* o) {
     idTable->enter (ast->I->spelling, ast);
 
 	if (ast->duplicated)
-      reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
-    return NULL;
-  }
+    reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
+  return NULL;
+}
 
 Object* Checker::visitUnaryOperatorDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	UnaryOperatorDeclaration* ast = (UnaryOperatorDeclaration*)obj;
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitVarDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	VarDeclaration* ast = (VarDeclaration*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    idTable->enter (ast->I->spelling, ast);
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->I->spelling, ast);
 
-    if (ast->duplicated)
+  if (ast->duplicated)
 		reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitVarInitDeclaration(Object* obj, Object* o)
 {
@@ -691,59 +716,59 @@ Object* Checker::visitVarInitDeclaration(Object* obj, Object* o)
   return NULL;
 }
 
-  // Array Aggregates
+// Array Aggregates
 
-  // Returns the TypeDenoter for the Array Aggregate. Does not use the
-  // given object.
+// Returns the TypeDenoter for the Array Aggregate. Does not use the
+// given object.
 
 Object* Checker::visitMultipleArrayAggregate(Object* obj, Object* o) {
 	printdetails(obj);
 	MultipleArrayAggregate* ast = (MultipleArrayAggregate*)obj;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-    TypeDenoter* elemType = (TypeDenoter*) ast->AA->visit(this, NULL);
-    ast->elemCount = ast->AA->elemCount + 1;
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  TypeDenoter* elemType = (TypeDenoter*) ast->AA->visit(this, NULL);
+  ast->elemCount = ast->AA->elemCount + 1;
 
-    if (! eType->equals(elemType))
-		reporter->reportError ("incompatible array-aggregate element", "", ast->E->position);
+  if (! eType->equals(elemType))
+    reporter->reportError ("incompatible array-aggregate element", "", ast->E->position);
 
-    return elemType;
-  }
+  return elemType;
+}
 
 Object* Checker::visitSingleArrayAggregate(Object* obj, Object* o) {
 	printdetails(obj);
 	SingleArrayAggregate* ast = (SingleArrayAggregate*)obj;
-    TypeDenoter* elemType = (TypeDenoter*) ast->E->visit(this, NULL);
-    ast->elemCount = 1;
-    return elemType;
-  }
+  TypeDenoter* elemType = (TypeDenoter*) ast->E->visit(this, NULL);
+  ast->elemCount = 1;
+  return elemType;
+}
 
-  // Record Aggregates
+// Record Aggregates
 
-  // Returns the TypeDenoter for the Record Aggregate. Does not use the
-  // given object.
+// Returns the TypeDenoter for the Record Aggregate. Does not use the
+// given object.
 
 Object* Checker::visitMultipleRecordAggregate(Object* obj, Object* o) {
 	printdetails(obj);
 	MultipleRecordAggregate* ast = (MultipleRecordAggregate*)obj;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-    FieldTypeDenoter* rType = (FieldTypeDenoter*) ast->RA->visit(this, NULL);
-    TypeDenoter* fType = checkFieldIdentifier(rType, ast->I);
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  FieldTypeDenoter* rType = (FieldTypeDenoter*) ast->RA->visit(this, NULL);
+  TypeDenoter* fType = checkFieldIdentifier(rType, ast->I);
 
 	if (fType != getvariables->errorType)
 		reporter->reportError ("duplicate field \"%\" in record",ast->I->spelling, ast->I->position);
 
-    ast->type = new MultipleFieldTypeDenoter(ast->I, eType, rType, ast->position);
+  ast->type = new MultipleFieldTypeDenoter(ast->I, eType, rType, ast->position);
 
-    return ast->type;
-  }
+  return ast->type;
+}
 
 Object* Checker::visitSingleRecordAggregate(Object* obj, Object* o) {
 	printdetails(obj);
 	SingleRecordAggregate* ast = (SingleRecordAggregate*)obj;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-    ast->type = new SingleFieldTypeDenoter(ast->I, eType, ast->position);
-    return ast->type;
-  }
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  ast->type = new SingleFieldTypeDenoter(ast->I, eType, ast->position);
+  return ast->type;
+}
 
   // Formal Parameters
 
@@ -1016,6 +1041,16 @@ Object* Checker::visitArrayTypeDenoter(Object* obj, Object* o) {
     return ast;
   }
 
+Object* Checker::visitStringTypeDenoter(Object* obj, Object* o)
+{
+  StringTypeDenoter *ast = (StringTypeDenoter *)obj;
+
+  if (atoi(ast->IL->spelling.c_str()) <= 0)
+    reporter->reportError("strings must not be empty", "", ast->IL->position);
+
+  return ast;
+}
+
 Object* Checker::visitBoolTypeDenoter(Object* obj, Object* o) {
 	printdetails(obj);
 	BoolTypeDenoter* ast = (BoolTypeDenoter*)obj;
@@ -1112,6 +1147,14 @@ Object* Checker::visitOperator(Object* obj, Object* o) {
     return binding;
   }
 
+Object* Checker::visitStringLiteral(Object* obj, Object* o)
+{
+  StringLiteral *S = (StringLiteral *)obj;
+  IntegerLiteral *IL = new IntegerLiteral(to_string(S->spelling.length()), dummyPos);
+
+  return new StringTypeDenoter(IL, dummyPos);
+}
+
   // Value-or-variable names
 
   // Determines the address of a named object (constant or variable).
@@ -1136,76 +1179,111 @@ Object* Checker::visitOperator(Object* obj, Object* o) {
 Object* Checker::visitDotVname(Object* obj, Object* o) {
 	printdetails(obj);
 	DotVname* ast = (DotVname*)obj;
-    ast->type = NULL;
-    TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
-    ast->variable = ast->V->variable;
-    if (! (vType->class_type() == "RECORDTYPEDENOTER"))
-      reporter->reportError ("record expected here", "", ast->V->position);
-    else {
-      ast->type = checkFieldIdentifier(((RecordTypeDenoter*) vType)->FT, ast->I);
-	  if (ast->type == getvariables->errorType)
-        reporter->reportError ("no field \"%\" in this record type",
-                              ast->I->spelling, ast->I->position);
-    }
-    return ast->type;
+  ast->type = NULL;
+  TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
+  ast->variable = ast->V->variable;
+  if (! (vType->class_type() == "RECORDTYPEDENOTER"))
+    reporter->reportError ("record expected here", "", ast->V->position);
+  else {
+    ast->type = checkFieldIdentifier(((RecordTypeDenoter*) vType)->FT, ast->I);
+  if (ast->type == getvariables->errorType)
+    reporter->reportError ("no field \"%\" in this record type", ast->I->spelling, ast->I->position);
   }
+  return ast->type;
+}
+
+Object* Checker::visitPackageVname(Object* obj, Object* o)
+{
+  PackageVname *ast = (PackageVname *)obj;
+
+  PackageDeclaration *package = (PackageDeclaration *)ast->V->visit(this, NULL);
+
+  Declaration *binding = package->Table->retrieve(ast->I->spelling);
+  if (binding == NULL)
+    reportUndeclared(ast->I);
+  else if (binding->class_type() == "PACKAGEDECLARATION")
+    return binding;
+  else if (binding->class_type() == "CONSTDECLARATION") {
+    ast->type = ((ConstDeclaration*) binding)->E->type;
+    ast->variable = false;
+  }
+  else if (binding->class_type() == "VARDECLARATION" || binding->class_type() == "VARINITDECLARATION") {
+    ast->type = ((VarDeclaration*) binding)->T;
+    ast->variable = true;
+  }
+  else
+    reporter->reportError ("\"%\" is not a const or var identifier",ast->I->spelling, ast->I->position);
+
+  return ast->type;
+}
 
 Object* Checker::visitSimpleVname(Object* obj, Object* o) {
 	printdetails(obj);
 	SimpleVname* ast = (SimpleVname*)obj;
-    ast->variable = false;
+  ast->variable = false;
 	ast->type = getvariables->errorType;
-    Declaration* binding = (Declaration*) ast->I->visit(this, NULL);
-    if (binding == NULL)
-      reportUndeclared(ast->I);
+  Declaration* binding = (Declaration*) ast->I->visit(this, NULL);
+  if (binding == NULL)
+    reportUndeclared(ast->I);
+  else
+    if (binding->class_type() == "CONSTDECLARATION") {
+      ast->type = ((ConstDeclaration*) binding)->E->type;
+      ast->variable = false;
+    }
+    else if (binding->class_type() == "VARDECLARATION" || binding->class_type() == "VARINITDECLARATION") {
+      ast->type = ((VarDeclaration*) binding)->T;
+      ast->variable = true;
+    }
+    else if (binding->class_type() == "CONSTFORMALPARAMETER") {
+      ast->type = ((ConstFormalParameter*) binding)->T;
+      ast->variable = false;
+    }
+    else if (binding->class_type() == "VARFORMALPARAMETER") {
+      ast->type = ((VarFormalParameter*) binding)->T;
+      ast->variable = true;
+    }
+    else if (binding->class_type() == "RESULTFORMALPARAMETER") {
+      ast->type = ((ResultFormalParameter*) binding)->T;
+      ast->variable = true;
+    }
+    else if (binding->class_type() == "VALUERESULTFORMALPARAMETER") {
+      ast->type = ((ValueResultFormalParameter*) binding)->T;
+      ast->variable = true;
+    }
+    else if (binding->class_type() == "PACKAGEDECLARATION") {
+      return binding;
+    }
     else
-      if (binding->class_type() == "CONSTDECLARATION") {
-        ast->type = ((ConstDeclaration*) binding)->E->type;
-        ast->variable = false;
-      } 
-	  else if (binding->class_type() =="VARDECLARATION" || binding->class_type() =="VARINITDECLARATION") {
-        ast->type = ((VarDeclaration*) binding)->T;
-        ast->variable = true;
-      } 
-	  else if (binding->class_type() == "CONSTFORMALPARAMETER") {
-        ast->type = ((ConstFormalParameter*) binding)->T;
-        ast->variable = false;
-      } 
-	  else if (binding->class_type() == "VARFORMALPARAMETER") {
-        ast->type = ((VarFormalParameter*) binding)->T;
-        ast->variable = true;
-      } 
-	  else
-        reporter->reportError ("\"%\" is not a const or var identifier",ast->I->spelling, ast->I->position);
-    return ast->type;
-  }
+      reporter->reportError ("\"%\" is not a const or var identifier",ast->I->spelling, ast->I->position);
+  return ast->type;
+}
 
 Object* Checker::visitSubscriptVname(Object* obj, Object* o) {
 	printdetails(obj);
 	SubscriptVname* ast = (SubscriptVname*)obj;
-    TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
-    ast->variable = ast->V->variable;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
+  ast->variable = ast->V->variable;
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
 	if (vType != getvariables->errorType) {
-      if (! (vType->class_type()== "ARRAYTYPEDENOTER"))
-        reporter->reportError ("array expected here", "", ast->V->position);
-      else {
-		  if (! eType->equals(getvariables->integerType))
-				reporter->reportError ("Integer expression expected here", "", ast->E->position);
-		  ast->type = ((ArrayTypeDenoter*) vType)->T;
-      }
+    if (! (vType->class_type()== "ARRAYTYPEDENOTER"))
+      reporter->reportError ("array expected here", "", ast->V->position);
+    else {
+      if (! eType->equals(getvariables->integerType))
+        reporter->reportError ("Integer expression expected here", "", ast->E->position);
+      ast->type = ((ArrayTypeDenoter*) vType)->T;
     }
-    return ast->type;
   }
+  return ast->type;
+}
 
   // Programs
 
 Object* Checker::visitProgram(Object* obj, Object* o) {
 	printdetails(obj);
 	Program* ast = (Program*)obj;
-    ast->C->visit(this, NULL);
-    return NULL;
-  }
+  ast->C->visit(this, NULL);
+  return NULL;
+}
 
   // Checks whether the source program, represented by its AST, satisfies the
   // language's scope rules and type rules.
@@ -1217,20 +1295,20 @@ Object* Checker::visitProgram(Object* obj, Object* o) {
   // Types are represented by small ASTs.
 
 void Checker::check(Program* ast) {
-    ast->visit(this, NULL);
-  }
+  ast->visit(this, NULL);
+}
 
   /////////////////////////////////////////////////////////////////////////////
 
 Checker::Checker(ErrorReporter* reporter) {
-    this->reporter = reporter;
-    this->idTable = new IdentificationTable ();
+  this->reporter = reporter;
+  this->idTable = new IdentificationTable ();
 	this->dummyPos = new SourcePosition();
 	this->dummyI = new Identifier("",dummyPos);
 	this->getvariables= new StdEnvironment();
 
-    establishStdEnvironment();
-  }
+  establishStdEnvironment();
+}
 
 
 
@@ -1238,8 +1316,8 @@ Checker::Checker(ErrorReporter* reporter) {
   // has not been declared.
 
 void Checker::reportUndeclared (Terminal* leaf) {
-    reporter->reportError("\"%\" is not declared", leaf->spelling, leaf->position);
-  }
+  reporter->reportError("\"%\" is not declared", leaf->spelling, leaf->position);
+}
 
 
 TypeDenoter* Checker::checkFieldIdentifier(FieldTypeDenoter* ast, Identifier* I) {
@@ -1358,54 +1436,52 @@ void Checker::printdetails(Object* obj){
 
 
 void Checker::establishStdEnvironment () {
+  //idTable.startIdentification();
+  getvariables->booleanType = new BoolTypeDenoter(dummyPos);
+  getvariables->integerType = new IntTypeDenoter(dummyPos);
+  getvariables->charType = new CharTypeDenoter(dummyPos);
+  getvariables->anyType = new AnyTypeDenoter(dummyPos);
+  getvariables->errorType = new ErrorTypeDenoter(dummyPos);
 
-     //idTable.startIdentification();
-	getvariables->booleanType = new BoolTypeDenoter(dummyPos);
-	getvariables->integerType = new IntTypeDenoter(dummyPos);
-	getvariables->charType = new CharTypeDenoter(dummyPos);
-	getvariables->anyType = new AnyTypeDenoter(dummyPos);
-	getvariables->errorType = new ErrorTypeDenoter(dummyPos);
+  getvariables->booleanDecl = declareStdType("Boolean", getvariables->booleanType);
+  getvariables->falseDecl = declareStdConst("false", getvariables->booleanType);
+  getvariables->trueDecl = declareStdConst("true", getvariables->booleanType);
+  getvariables->notDecl = declareStdUnaryOp("\\", getvariables->booleanType, getvariables->booleanType);
+  getvariables->andDecl = declareStdBinaryOp("/\\", getvariables->booleanType, getvariables->booleanType, getvariables->booleanType);
+  getvariables->orDecl = declareStdBinaryOp("\\/", getvariables->booleanType, getvariables->booleanType, getvariables->booleanType);
 
-	getvariables->booleanDecl = declareStdType("Boolean", getvariables->booleanType);
-	getvariables->falseDecl = declareStdConst("false", getvariables->booleanType);
-    getvariables->trueDecl = declareStdConst("true", getvariables->booleanType);
-    getvariables->notDecl = declareStdUnaryOp("\\", getvariables->booleanType, getvariables->booleanType);
-    getvariables->andDecl = declareStdBinaryOp("/\\", getvariables->booleanType, getvariables->booleanType, getvariables->booleanType);
-    getvariables->orDecl = declareStdBinaryOp("\\/", getvariables->booleanType, getvariables->booleanType, getvariables->booleanType);
+  getvariables->integerDecl = declareStdType("Integer", getvariables->integerType);
+  getvariables->maxintDecl = declareStdConst("maxint", getvariables->integerType);
+  getvariables->addDecl = declareStdBinaryOp("+", getvariables->integerType, getvariables->integerType, getvariables->integerType);
+  getvariables->subtractDecl = declareStdBinaryOp("-", getvariables->integerType, getvariables->integerType, getvariables->integerType);
+  getvariables->multiplyDecl = declareStdBinaryOp("*", getvariables->integerType, getvariables->integerType, getvariables->integerType);
+  getvariables->divideDecl = declareStdBinaryOp("/", getvariables->integerType, getvariables->integerType, getvariables->integerType);
+  getvariables->moduloDecl = declareStdBinaryOp("//", getvariables->integerType, getvariables->integerType, getvariables->integerType);
+  getvariables->lessDecl = declareStdBinaryOp("<", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
+  getvariables->notgreaterDecl = declareStdBinaryOp("<=", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
+  getvariables->greaterDecl = declareStdBinaryOp(">", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
+  getvariables->notlessDecl = declareStdBinaryOp(">=", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
 
-    getvariables->integerDecl = declareStdType("Integer", getvariables->integerType);
-    getvariables->maxintDecl = declareStdConst("maxint", getvariables->integerType);
-    getvariables->addDecl = declareStdBinaryOp("+", getvariables->integerType, getvariables->integerType, getvariables->integerType);
-    getvariables->subtractDecl = declareStdBinaryOp("-", getvariables->integerType, getvariables->integerType, getvariables->integerType);
-    getvariables->multiplyDecl = declareStdBinaryOp("*", getvariables->integerType, getvariables->integerType, getvariables->integerType);
-    getvariables->divideDecl = declareStdBinaryOp("/", getvariables->integerType, getvariables->integerType, getvariables->integerType);
-    getvariables->moduloDecl = declareStdBinaryOp("//", getvariables->integerType, getvariables->integerType, getvariables->integerType);
-    getvariables->lessDecl = declareStdBinaryOp("<", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
-    getvariables->notgreaterDecl = declareStdBinaryOp("<=", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
-    getvariables->greaterDecl = declareStdBinaryOp(">", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
-    getvariables->notlessDecl = declareStdBinaryOp(">=", getvariables->integerType, getvariables->integerType, getvariables->booleanType);
-
-    getvariables->charDecl = declareStdType("Char", getvariables->charType);
-    getvariables->chrDecl = declareStdFunc("chr", new SingleFormalParameterSequence(
-                                      new ConstFormalParameter(dummyI, getvariables->integerType, dummyPos), dummyPos), getvariables->charType);
-    getvariables->ordDecl = declareStdFunc("ord", new SingleFormalParameterSequence(
-                                      new ConstFormalParameter(dummyI, getvariables->charType, dummyPos), dummyPos), getvariables->integerType);
-    getvariables->eofDecl = declareStdFunc("eof", new EmptyFormalParameterSequence(dummyPos), getvariables->booleanType);
-    getvariables->eolDecl = declareStdFunc("eol", new EmptyFormalParameterSequence(dummyPos), getvariables->booleanType);
-    getvariables->getDecl = declareStdProc("get", new SingleFormalParameterSequence(
-                                      new VarFormalParameter(dummyI, getvariables->charType, dummyPos), dummyPos));
-    getvariables->putDecl = declareStdProc("put", new SingleFormalParameterSequence(
-                                      new ConstFormalParameter(dummyI, getvariables->charType, dummyPos), dummyPos));
-    getvariables->getintDecl = declareStdProc("getint", new SingleFormalParameterSequence(
-                                            new VarFormalParameter(dummyI, getvariables->integerType, dummyPos), dummyPos));
-    getvariables->putintDecl = declareStdProc("putint", new SingleFormalParameterSequence(
-                                            new ConstFormalParameter(dummyI, getvariables->integerType, dummyPos), dummyPos));
-    getvariables->geteolDecl = declareStdProc("geteol", new EmptyFormalParameterSequence(dummyPos));
-    getvariables->puteolDecl = declareStdProc("puteol", new EmptyFormalParameterSequence(dummyPos));
-    getvariables->equalDecl = declareStdBinaryOp("=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
-    getvariables->unequalDecl = declareStdBinaryOp("\\=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
-
-  }
+  getvariables->charDecl = declareStdType("Char", getvariables->charType);
+  getvariables->chrDecl = declareStdFunc("chr", new SingleFormalParameterSequence(
+                                  new ConstFormalParameter(dummyI, getvariables->integerType, dummyPos), dummyPos), getvariables->charType);
+  getvariables->ordDecl = declareStdFunc("ord", new SingleFormalParameterSequence(
+                                  new ConstFormalParameter(dummyI, getvariables->charType, dummyPos), dummyPos), getvariables->integerType);
+  getvariables->eofDecl = declareStdFunc("eof", new EmptyFormalParameterSequence(dummyPos), getvariables->booleanType);
+  getvariables->eolDecl = declareStdFunc("eol", new EmptyFormalParameterSequence(dummyPos), getvariables->booleanType);
+  getvariables->getDecl = declareStdProc("get", new SingleFormalParameterSequence(
+                                  new VarFormalParameter(dummyI, getvariables->charType, dummyPos), dummyPos));
+  getvariables->putDecl = declareStdProc("put", new SingleFormalParameterSequence(
+                                  new ConstFormalParameter(dummyI, getvariables->charType, dummyPos), dummyPos));
+  getvariables->getintDecl = declareStdProc("getint", new SingleFormalParameterSequence(
+                                        new VarFormalParameter(dummyI, getvariables->integerType, dummyPos), dummyPos));
+  getvariables->putintDecl = declareStdProc("putint", new SingleFormalParameterSequence(
+                                        new ConstFormalParameter(dummyI, getvariables->integerType, dummyPos), dummyPos));
+  getvariables->geteolDecl = declareStdProc("geteol", new EmptyFormalParameterSequence(dummyPos));
+  getvariables->puteolDecl = declareStdProc("puteol", new EmptyFormalParameterSequence(dummyPos));
+  getvariables->equalDecl = declareStdBinaryOp("=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
+  getvariables->unequalDecl = declareStdBinaryOp("\\=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
+}
 
 
 #endif

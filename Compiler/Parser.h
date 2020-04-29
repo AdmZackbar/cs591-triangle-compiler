@@ -38,6 +38,7 @@ public:
   void syntacticError(string messageTemplate, string tokenQuoted);
   IntegerLiteral* parseIntegerLiteral();
   CharacterLiteral* parseCharacterLiteral();
+  StringLiteral* parseStringLiteral();
   Identifier* parseIdentifier();
   Operator* parseOperator();
   Command* parseCommand();
@@ -183,23 +184,38 @@ CharacterLiteral* Parser::parseCharacterLiteral(){
     return CL;
   }
 
+StringLiteral* Parser::parseStringLiteral()
+{
+  StringLiteral *SL = NULL;
+
+  if (currentToken->kind == Token::STRINGLITERAL)
+  {
+    SL = new StringLiteral(currentToken->spelling, currentToken->position);
+    currentToken = lexicalAnalyser->scan();
+  }
+  else
+    syntacticError("string literal expected here", "");
+  
+  return SL;
+}
+
 // parseIdentifier parses an identifier, and constructs a leaf AST to
 // represent it.
 
 Identifier* Parser::parseIdentifier(){
-    Identifier* I = NULL;
+  Identifier* I = NULL;
 
 	if (currentToken->kind == Token::IDENTIFIER) {
-      previousTokenPosition = currentToken->position;
-      string spelling = currentToken->spelling;
-      I = new Identifier(spelling, previousTokenPosition);
-      currentToken = lexicalAnalyser->scan();
-    } else {
-      I = NULL;
-      syntacticError("identifier expected here", "");
-    }
-    return I;
+    previousTokenPosition = currentToken->position;
+    string spelling = currentToken->spelling;
+    I = new Identifier(spelling, previousTokenPosition);
+    currentToken = lexicalAnalyser->scan();
+  } else {
+    I = NULL;
+    syntacticError("identifier expected here", "");
   }
+  return I;
+}
 
 // parseOperator parses an operator, and constructs a leaf AST to
 // represent it.
@@ -208,16 +224,16 @@ Operator* Parser::parseOperator(){
     Operator* O = NULL;
 
 	if (currentToken->kind == Token::OPERATOR) {
-      previousTokenPosition = currentToken->position;
-      string spelling = currentToken->spelling;
-      O = new Operator(spelling, previousTokenPosition);
-      currentToken = lexicalAnalyser->scan();
-    } else {
-      O = NULL;
-      syntacticError("operator expected here", "");
-    }
-    return O;
+    previousTokenPosition = currentToken->position;
+    string spelling = currentToken->spelling;
+    O = new Operator(spelling, previousTokenPosition);
+    currentToken = lexicalAnalyser->scan();
+  } else {
+    O = NULL;
+    syntacticError("operator expected here", "");
   }
+  return O;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -464,6 +480,14 @@ Expression* Parser::parsePrimaryExpression() {
       }
       break;
 
+  case Token::STRINGLITERAL:
+  {
+    StringLiteral *s1AST = parseStringLiteral();
+    finish(expressionPos);
+    expressionAST = new StringExpression(s1AST, expressionPos);
+  }
+  break;
+
 	case Token::LBRACKET:
       {
         acceptIt();
@@ -574,34 +598,38 @@ ArrayAggregate* Parser::parseArrayAggregate(){
 ///////////////////////////////////////////////////////////////////////////////
 
 Vname* Parser::parseVname () {
-    Vname* vnameAST = NULL; // in case there's a syntactic error
-    Identifier* iAST = parseIdentifier();
-    vnameAST = parseRestOfVname(iAST);
-    return vnameAST;
-  }
+  Vname* vnameAST = NULL; // in case there's a syntactic error
+  Identifier* iAST = parseIdentifier();
+  vnameAST = parseRestOfVname(iAST);
+  return vnameAST;
+}
 
 Vname* Parser::parseRestOfVname(Identifier* identifierAST){
-    SourcePosition* vnamePos = new SourcePosition();
-    vnamePos = identifierAST->position;
-    Vname* vAST = new SimpleVname(identifierAST, vnamePos);
+  SourcePosition* vnamePos = new SourcePosition();
+  vnamePos = identifierAST->position;
+  Vname* vAST = new SimpleVname(identifierAST, vnamePos);
 
-	while (currentToken->kind == Token::DOT ||
-		currentToken->kind == Token::LBRACKET) {
-
-		if (currentToken->kind == Token::DOT) {
-        acceptIt();
-        Identifier* iAST = parseIdentifier();
-        vAST = new DotVname(vAST, iAST, vnamePos);
-      } else {
-        acceptIt();
-        Expression* eAST = parseExpression();
-		accept(Token::RBRACKET);
-        finish(vnamePos);
-        vAST = new SubscriptVname(vAST, eAST, vnamePos);
-      }
+	while (check(Token::DOT) || check(Token::LBRACKET) || check(Token::DOLLAR)) {
+		if (check(Token::DOT)) {
+      acceptIt();
+      Identifier* iAST = parseIdentifier();
+      vAST = new DotVname(vAST, iAST, vnamePos);
+    } else if (check(Token::LBRACKET)) {
+      acceptIt();
+      Expression* eAST = parseExpression();
+		  accept(Token::RBRACKET);
+      finish(vnamePos);
+      vAST = new SubscriptVname(vAST, eAST, vnamePos);
     }
-    return vAST;
+    else
+    {
+      acceptIt();
+      Identifier* iAST = parseIdentifier();
+      vAST = new PackageVname(vAST, iAST, vnamePos);
+    }
   }
+  return vAST;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -682,6 +710,24 @@ Declaration* Parser::parseSingleDeclaration() {
     accept(Token::RPAREN);
     finish(declarationPos);
     declarationAST = new EnumDeclaration(nameAST, iASTs, declarationPos);
+  }
+  break;
+
+  case Token::PACKAGE:
+  {
+    acceptIt();
+    Identifier *iAST = parseIdentifier();
+    accept(Token::IS);
+    Declaration *d1AST = parseDeclaration();
+    Declaration *d2AST = NULL;
+    if (check(Token::WHERE))
+    {
+      acceptIt();
+      d2AST = parseDeclaration();
+    }
+    accept(Token::END);
+    finish(declarationPos);
+    declarationAST = new PackageDeclaration(iAST, d1AST, d2AST, declarationPos);
   }
   break;
 
@@ -1010,6 +1056,15 @@ TypeDenoter* Parser::parseTypeDenoter(){
 	case Token::IDENTIFIER:
       {
         Identifier* iAST = parseIdentifier();
+
+        if (iAST->spelling == "string")
+        {
+          IntegerLiteral *ilAST = parseIntegerLiteral();
+          finish(typePos);
+          typeAST = new StringTypeDenoter(ilAST, typePos);
+          break;
+        }
+
         finish(typePos);
         typeAST = new SimpleTypeDenoter(iAST, typePos);
       }

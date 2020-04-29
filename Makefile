@@ -8,7 +8,7 @@ RESULTDIR = ./Output/Results
 all: $(EXECS)
 
 tc : ./Compiler/main.cpp
-	$(CC) ./Compiler/main.cpp -I ./Compiler -g -o tc
+	$(CC) ./Compiler/main.cpp -I ./Compiler -o tc
 
 td : ./Disassembler/main.cpp
 	$(CC) ./Disassembler/main.cpp -I ./Disassembler -o td

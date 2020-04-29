@@ -496,30 +496,30 @@ Object* Encoder::visitVnameExpression(Object* obj, Object* o) {
   // Declarations
 Object* Encoder::visitBinaryOperatorDeclaration(Object* obj,Object* o){
 	BinaryOperatorDeclaration* ast = (BinaryOperatorDeclaration*)obj;
-    return new Integer(0);
-  }
+  return new Integer(0);
+}
 
 Object* Encoder::visitConstDeclaration(Object* obj, Object* o) {
 	ConstDeclaration* ast = (ConstDeclaration*)obj;
-    Frame* frame = (Frame*) o;
-    int extraSize = 0;
+  Frame* frame = (Frame*) o;
+  int extraSize = 0;
 
-    if (ast->E->class_type() == "CHARACTEREXPRESSION") {
-        CharacterLiteral* CL = ((CharacterExpression*) ast->E)->CL;
-		ast->entity = new KnownValue(mach->characterSize,characterValuation(CL->spelling));
-		} 
+  if (ast->E->class_type() == "CHARACTEREXPRESSION") {
+    CharacterLiteral* CL = ((CharacterExpression*) ast->E)->CL;
+    ast->entity = new KnownValue(mach->characterSize,characterValuation(CL->spelling));
+  } 
 	else if (ast->E->class_type() =="INTEGEREXPRESSION") {
-        IntegerLiteral* IL = ((IntegerExpression*) ast->E)->IL;
+    IntegerLiteral* IL = ((IntegerExpression*) ast->E)->IL;
 		ast->entity = new KnownValue(mach->integerSize,atoi(IL->spelling.c_str()));
-		}
-	else {
-      int valSize = ((Integer*) ast->E->visit(this, frame))->value;
-      ast->entity = new UnknownValue(valSize, frame->level, frame->size);
-      extraSize = valSize;
-    }
-    writeTableDetails(ast);
-    return new Integer(extraSize);
   }
+	else {
+    int valSize = ((Integer*) ast->E->visit(this, frame))->value;
+    ast->entity = new UnknownValue(valSize, frame->level, frame->size);
+    extraSize = valSize;
+  }
+  writeTableDetails(ast);
+  return new Integer(extraSize);
+}
 
 Object* Encoder::visitFuncBinOpDeclaration(Object* obj, Object* o)
 {
@@ -551,27 +551,27 @@ Object* Encoder::visitFuncBinOpDeclaration(Object* obj, Object* o)
 
 Object* Encoder::visitFuncDeclaration(Object* obj, Object* o) {
 	FuncDeclaration* ast = (FuncDeclaration*)obj;
-    Frame* frame = (Frame*) o;
-    int jumpAddr = nextInstrAddr;
-    int argsSize = 0;
+  Frame* frame = (Frame*) o;
+  int jumpAddr = nextInstrAddr;
+  int argsSize = 0;
 	int valSize = 0;
 
 	emit(mach->JUMPop, 0, mach->CBr, 0);
 	ast->entity = new KnownRoutine(mach->closureSize, frame->level, nextInstrAddr);
-    writeTableDetails(ast);
+  writeTableDetails(ast);
 
 	if (frame->level == mach->maxRoutineLevel)
-      reporter->reportRestriction("can't nest routines more than 7 deep");
-    else {
-      Frame* frame1 = new Frame(frame->level + 1, 0);
-      argsSize = ((Integer*) ast->FPS->visit(this, frame1))->value;
-	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
-      valSize = ((Integer*) ast->E->visit(this, frame2))->value;
-    }
-	emit(mach->RETURNop, valSize, 0, argsSize);
-    patch(jumpAddr, nextInstrAddr);
-    return new Integer(0);
+    reporter->reportRestriction("can't nest routines more than 7 deep");
+  else {
+    Frame* frame1 = new Frame(frame->level + 1, 0);
+    argsSize = ((Integer*) ast->FPS->visit(this, frame1))->value;
+    Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
+    valSize = ((Integer*) ast->E->visit(this, frame2))->value;
   }
+	emit(mach->RETURNop, valSize, 0, argsSize);
+  patch(jumpAddr, nextInstrAddr);
+  return new Integer(0);
+}
 
 Object* Encoder::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
 {
@@ -601,27 +601,28 @@ Object* Encoder::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
 
 Object* Encoder::visitProcDeclaration(Object* obj, Object* o) {
 	ProcDeclaration* ast = (ProcDeclaration*)obj;
-    Frame* frame = (Frame*) o;
-    int jumpAddr = nextInstrAddr;
-    int argsSize = 0;
+  Frame* frame = (Frame*) o;
+  int jumpAddr = nextInstrAddr;
+  int argsSize = 0;
 
 	emit(mach->JUMPop, 0, mach->CBr, 0);
 	ast->entity = new KnownRoutine (mach->closureSize, frame->level,nextInstrAddr);
-    writeTableDetails(ast);
+  writeTableDetails(ast);
 	if (frame->level == mach->maxRoutineLevel)
-      reporter->reportRestriction("can't nest routines so deeply");
-    else {
-      Frame* frame1 = new Frame(frame->level + 1, 0);
-      argsSize = ((Integer*) ast->FPS->visit(this, frame1))->value;
+    reporter->reportRestriction("can't nest routines so deeply");
+  else {
+    Frame* frame1 = new Frame(frame->level + 1, 0);
+    argsSize = ((Integer*) ast->FPS->visit(this, frame1))->value;
 	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
-      // TODO - Handle initilization of value-result parameters
-      ast->C->visit(this, frame2);
-      // TODO - Handle data transfer for result and value-result parameters
-    }
-	emit(mach->RETURNop, 0, 0, argsSize);
-    patch(jumpAddr, nextInstrAddr);
-    return new Integer(0);
+    // TODO - Create space for all result and value-result parameters(local copy)
+    // TODO - Handle initilization of value-result parameters
+    ast->C->visit(this, frame2);
+    // TODO - Handle data transfer for result and value-result parameters
   }
+	emit(mach->RETURNop, 0, 0, argsSize);
+  patch(jumpAddr, nextInstrAddr);
+  return new Integer(0);
+}
 
 Object* Encoder::visitSequentialDeclaration(Object* obj, Object* o) {
 	SequentialDeclaration* ast=(SequentialDeclaration*)obj;

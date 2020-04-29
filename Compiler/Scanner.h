@@ -143,6 +143,17 @@ int Scanner::scanToken() {
 		break;
       } else 
 		  return Token::ERROR;break;}
+  case '"':
+    takeIt();
+    while (currentChar != '"' || currentChar != EOF)
+      takeIt();
+    if (currentChar == '"')
+    {
+      takeIt();
+      return Token::STRINGLITERAL;
+    }
+    else
+      return Token::ERROR;
 	case '.':
       takeIt();
       return Token::DOT;break;
@@ -190,6 +201,10 @@ int Scanner::scanToken() {
     case '}':
       takeIt();
       return Token::RCURLY;
+
+    case '$':
+      takeIt();
+      return Token::DOLLAR;
 
     case EOF:
       return Token::EOT;

@@ -26,6 +26,7 @@ public:
 	virtual Object* visitIntegerExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitLetExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitRecordExpression(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitStringExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitUnaryExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitVnameExpression(Object* ast, Object* o){ return NULL; }
 	
@@ -36,6 +37,7 @@ public:
 	virtual Object* visitFuncBinOpDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncUnaryOpDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitPackageDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitProcDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSequentialDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitTypeDeclaration(Object* ast, Object* o){ return NULL; }
@@ -81,6 +83,7 @@ public:
 	virtual Object* visitEnumTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitErrorTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSimpleTypeDenoter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitStringTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitRecordTypeDenoter(Object* ast, Object* o){ return NULL; }
 	
@@ -92,9 +95,11 @@ public:
 	virtual Object* visitIdentifier(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntegerLiteral(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitOperator(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitStringLiteral(Object* ast, Object* o){ return NULL; }
 	
 	// Value-or-variable names
 	virtual Object* visitDotVname(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitPackageVname(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSimpleVname(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSubscriptVname(Object* ast, Object* o){ return NULL; }
 	
