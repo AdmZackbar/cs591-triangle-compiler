@@ -842,14 +842,14 @@ Object* Checker::visitValueResultFormalParameter(Object* obj, Object* o)
 Object* Checker::visitVarFormalParameter(Object* obj, Object* o) {
 	printdetails(obj);
 	VarFormalParameter* ast = (VarFormalParameter*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    idTable->enter (ast->I->spelling, ast);
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->I->spelling, ast);
 
-    if (ast->duplicated)
-		reporter->reportError ("duplicated formal parameter \"%\"",ast->I->spelling, ast->position);
+  if (ast->duplicated)
+    reporter->reportError ("duplicated formal parameter \"%\"",ast->I->spelling, ast->position);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitEmptyFormalParameterSequence(Object* obj, Object* o) {
 	printdetails(obj);
@@ -880,17 +880,17 @@ Object* Checker::visitSingleFormalParameterSequence(Object* obj, Object* o) {
 Object* Checker::visitConstActualParameter(Object* obj, Object* o) {
 	printdetails(obj);
 	ConstActualParameter* ast = (ConstActualParameter*)obj;
-    FormalParameter* fp = (FormalParameter*) o;
-    TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
+  FormalParameter* fp = (FormalParameter*) o;
+  TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
 
-    if (! (fp->class_type() == "CONSTFORMALPARAMETER"))
-			reporter->reportError ("const actual parameter not expected here", "",ast->position);
+  if (! (fp->class_type() == "CONSTFORMALPARAMETER"))
+    reporter->reportError ("const actual parameter not expected here", "",ast->position);
 
-    else if (! eType->equals(((ConstFormalParameter*) fp)->T))
-			reporter->reportError ("wrong type for const actual parameter", "",ast->E->position);
+  else if (! eType->equals(((ConstFormalParameter*) fp)->T))
+    reporter->reportError ("wrong type for const actual parameter", "",ast->E->position);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 
 Object* Checker::visitFuncActualParameter(Object* obj, Object* o) {
@@ -967,21 +967,21 @@ Object* Checker::visitProcActualParameter(Object* obj, Object* o) {
 Object* Checker::visitVarActualParameter(Object* obj, Object* o) {
 	printdetails(obj);
 	VarActualParameter* ast = (VarActualParameter*)obj;
-    FormalParameter* fp = (FormalParameter*) o;
+  FormalParameter* fp = (FormalParameter*) o;
 
-    TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
+  TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
 
-    if (! ast->V->variable)
-		reporter->reportError ("actual parameter is not a variable", "",ast->V->position);
+  if (!ast->V->variable)
+    reporter->reportError ("actual parameter is not a variable", "",ast->V->position);
 
-    else if (! (fp->class_type() == "VARFORMALPARAMETER"))
-		reporter->reportError ("var actual parameter not expected here", "",ast->V->position);
+  else if (!(fp->class_type() == "VARFORMALPARAMETER" || fp->class_type() == "RESULTFORMALPARAMETER" || fp->class_type() == "VALUERESULTFORMALPARAMETER"))
+    reporter->reportError ("var actual parameter not expected here", "",ast->V->position);
 
-    else if (! vType->equals(((VarFormalParameter*) fp)->T))
-		reporter->reportError ("wrong type for var actual parameter", "",ast->V->position);
+  else if (!vType->equals(((VarFormalParameter*) fp)->T))
+    reporter->reportError ("wrong type for var actual parameter", "",ast->V->position);
 
-    return NULL;
-  }
+  return NULL;
+}
 
 Object* Checker::visitEmptyActualParameterSequence(Object* obj, Object* o) {
 printdetails(obj);

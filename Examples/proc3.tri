@@ -1,0 +1,18 @@
+let
+    proc copy (x: Integer, var y: Integer) ~
+    begin
+        putint(x);
+        y:=x;
+    end;
+    proc copy2 (in x: Integer, in out y: Integer) ~
+    begin
+        putint(x);
+        y := x;
+        putint(y);
+    end;
+    var y := 2;
+    var n := 1
+in begin
+    copy2(n, var y);
+    putint(y);
+end

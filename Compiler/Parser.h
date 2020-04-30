@@ -864,36 +864,43 @@ FormalParameter* Parser::parseFormalParameter(){
   {
     Identifier* iAST = parseIdentifier();
 		accept(Token::COLON);
-    if (check(Token::IN_IN))
+    TypeDenoter* tAST = parseTypeDenoter();
+    finish(formalPos);
+    formalAST = new ConstFormalParameter(iAST, tAST, formalPos);
+  }
+  break;
+
+  case Token::IN_IN:
+  {
+    acceptIt();
+    if (check(Token::OUT))  // IN OUT - Value-Result Param
     {
       acceptIt();
-      if (check(Token::OUT))  // IN OUT - Value-Result Param
-      {
-        acceptIt();
-        TypeDenoter* tAST = parseTypeDenoter();
-        finish(formalPos);
-        formalAST = new ValueResultFormalParameter(iAST, tAST, formalPos);
-      }
-      else  // IN - Value Param(Const)
-      {
-        TypeDenoter* tAST = parseTypeDenoter();
-        finish(formalPos);
-        formalAST = new ConstFormalParameter(iAST, tAST, formalPos);
-      }
-    }
-    else if (check(Token::OUT)) // OUT - Result Param
-    {
-      acceptIt();
+      Identifier* iAST = parseIdentifier();
+		  accept(Token::COLON);
       TypeDenoter* tAST = parseTypeDenoter();
       finish(formalPos);
-      formalAST = new ResultFormalParameter(iAST, tAST, formalPos);
+      formalAST = new ValueResultFormalParameter(iAST, tAST, formalPos);
     }
-    else  // No keyword - Value Param(Const)
+    else  // IN - Value Param
     {
+      Identifier* iAST = parseIdentifier();
+		  accept(Token::COLON);
       TypeDenoter* tAST = parseTypeDenoter();
       finish(formalPos);
       formalAST = new ConstFormalParameter(iAST, tAST, formalPos);
     }
+  }
+  break;
+  
+  case Token::OUT:  // OUT - Result Param
+  {
+    acceptIt();
+    Identifier* iAST = parseIdentifier();
+    accept(Token::COLON);
+    TypeDenoter* tAST = parseTypeDenoter();
+    finish(formalPos);
+    formalAST = new ResultFormalParameter(iAST, tAST, formalPos);
   }
   break;
 

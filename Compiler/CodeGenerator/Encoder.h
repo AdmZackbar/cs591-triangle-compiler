@@ -7,6 +7,7 @@
 #include "import_headers.h"
 #include "./AST/Object.h"
 #include "./AST/Integer.h"
+#include "./AST/ResultParameterInfo.h"
 #include "./TAM/Instruction.h"
 #include "./TAM/Machine.h"
 
@@ -25,23 +26,22 @@
 #include "./CodeGenerator/UnknownValue.h"
 #include "./ContextualAnalyzer/Checker.h"
 
-
-
 #include "StdEnvironment.h"
 #include <string>
+#include <vector>
 
 using namespace std;
 
 class Encoder : public Visitor {
-
-  
 public:
-
 ErrorReporter* reporter;
 bool tableDetailsReqd;
 int nextInstrAddr;
 StdEnvironment* getvarz;
 Machine* mach;
+// Used for handling result and value result parameters
+Frame *helperFrame;
+vector<ResultParameterInfo *> parameterEntries;
 // Commands	
 
   Object* visitAssignCommand(Object* obj, Object* o);
@@ -611,13 +611,46 @@ Object* Encoder::visitProcDeclaration(Object* obj, Object* o) {
 	if (frame->level == mach->maxRoutineLevel)
     reporter->reportRestriction("can't nest routines so deeply");
   else {
+    // Initialize secondary frame so that when the args are evaluated, space can be properly allocated
+    helperFrame = new Frame(frame->level + 1, mach->linkDataSize);
+    parameterEntries.clear();
     Frame* frame1 = new Frame(frame->level + 1, 0);
     argsSize = ((Integer*) ast->FPS->visit(this, frame1))->value;
-	  Frame* frame2 = new Frame(frame->level + 1, mach->linkDataSize);
-    // TODO - Create space for all result and value-result parameters(local copy)
-    // TODO - Handle initilization of value-result parameters
-    ast->C->visit(this, frame2);
-    // TODO - Handle data transfer for result and value-result parameters
+	  
+    // Create space for all result and value-result parameters(local copy)
+    // Handle initilization of value-result parameters
+    for (int i=0; i<parameterEntries.size(); i++)
+    {
+      int newSize = parameterEntries[i]->argSize;
+      emit(mach->PUSHop, 0, 0, newSize);
+      parameterEntries[i]->param->entity = new KnownAddress(newSize, helperFrame->level, helperFrame->size);
+      if (parameterEntries[i]->copyIn)
+      {
+        // Transfer data in
+        UnknownAddress *mainLoc = parameterEntries[i]->mainLoc;
+        emit(mach->LOADop, mach->addressSize, displayRegister(helperFrame->level, mainLoc->address->level), mainLoc->address->displacement);
+        emit(mach->LOADIop, newSize, 0, 0);
+        emit(mach->STOREop, newSize, mach->LBr, helperFrame->size);
+      }
+      helperFrame = new Frame(helperFrame->level, newSize);
+    }
+    ast->C->visit(this, helperFrame);
+    // Handle data transfer for result and value-result parameters
+    int totalSize = 0;
+    for (int i=0; i<parameterEntries.size(); i++)
+    {
+      // Transfer data out
+      int newSize = parameterEntries[i]->argSize;
+      KnownAddress *newLoc = (KnownAddress *)parameterEntries[i]->param->entity;
+      UnknownAddress *mainLoc = parameterEntries[i]->mainLoc;
+      emit(mach->LOADop, newSize, displayRegister(helperFrame->level, newLoc->address->level), newLoc->address->displacement);
+      emit(mach->LOADop, mach->addressSize, displayRegister(helperFrame->level, mainLoc->address->level), mainLoc->address->displacement);
+      emit(mach->STOREIop, newSize, 0, 0);
+      totalSize += newSize;
+    }
+    emit(mach->POPop, 0, 0, totalSize);
+    // Null the secondary frame just in case it is used improperly later
+    helperFrame = NULL;
   }
 	emit(mach->RETURNop, 0, 0, argsSize);
   patch(jumpAddr, nextInstrAddr);
@@ -678,105 +711,115 @@ Object* Encoder::visitVarInitDeclaration(Object* obj, Object* o)
   // Array Aggregates
 Object* Encoder::visitMultipleArrayAggregate(Object* obj,Object* o) {
 	MultipleArrayAggregate* ast = (MultipleArrayAggregate*)obj;
-    Frame* frame = (Frame*) o;
-    int elemSize = ((Integer*) ast->E->visit(this, frame))->value;
-    Frame* frame1 = new Frame(frame, elemSize);
-    int arraySize = ((Integer*) ast->AA->visit(this, frame1))->value;
-    return new Integer(elemSize + arraySize);
-  }
+  Frame* frame = (Frame*) o;
+  int elemSize = ((Integer*) ast->E->visit(this, frame))->value;
+  Frame* frame1 = new Frame(frame, elemSize);
+  int arraySize = ((Integer*) ast->AA->visit(this, frame1))->value;
+  return new Integer(elemSize + arraySize);
+}
 
 Object* Encoder::visitSingleArrayAggregate(Object* obj, Object* o) {
 	SingleArrayAggregate* ast = (SingleArrayAggregate*)obj;
-    return ast->E->visit(this, o);
-  }
+  return ast->E->visit(this, o);
+}
 
 
   // Record Aggregates
 Object* Encoder::visitMultipleRecordAggregate(Object* obj,Object* o) {
 	MultipleRecordAggregate* ast =(MultipleRecordAggregate*)obj;
-    Frame* frame = (Frame*) o;
-    int fieldSize = ((Integer*) ast->E->visit(this, frame))->value;
-    Frame* frame1 = new Frame (frame, fieldSize);
-    int recordSize = ((Integer*) ast->RA->visit(this, frame1))->value;
-    return new Integer(fieldSize + recordSize);
-  }
+  Frame* frame = (Frame*) o;
+  int fieldSize = ((Integer*) ast->E->visit(this, frame))->value;
+  Frame* frame1 = new Frame (frame, fieldSize);
+  int recordSize = ((Integer*) ast->RA->visit(this, frame1))->value;
+  return new Integer(fieldSize + recordSize);
+}
 
 Object* Encoder::visitSingleRecordAggregate(Object* obj,Object* o) {
 	SingleRecordAggregate* ast = (SingleRecordAggregate*)obj;
-    return ast->E->visit(this, o);
-  }
+  return ast->E->visit(this, o);
+}
 
 
   // Formal Parameters
 Object* Encoder::visitConstFormalParameter(Object* obj, Object* o) {
 	ConstFormalParameter* ast = (ConstFormalParameter*)obj;
-    Frame* frame = (Frame*) o;
-    int valSize = ((Integer*) ast->T->visit(this, NULL))->value;
-    ast->entity = new UnknownValue (valSize, frame->level, -frame->size - valSize);
-    writeTableDetails(ast);
-    return new Integer(valSize);
-  }
+  Frame* frame = (Frame*) o;
+  int valSize = ((Integer*) ast->T->visit(this, NULL))->value;
+  ast->entity = new UnknownValue (valSize, frame->level, -frame->size - valSize);
+  writeTableDetails(ast);
+  return new Integer(valSize);
+}
 
 Object* Encoder::visitFuncFormalParameter(Object* obj, Object* o) {
 	FuncFormalParameter* ast = (FuncFormalParameter*)obj;
-    Frame* frame = (Frame*) o;
+  Frame* frame = (Frame*) o;
 	int argsSize = mach->closureSize;
 	ast->entity = new UnknownRoutine (mach->closureSize, frame->level, -frame->size - argsSize);
-    writeTableDetails(ast);
-    return new Integer(argsSize);
-  }
+  writeTableDetails(ast);
+  return new Integer(argsSize);
+}
 
 Object* Encoder::visitProcFormalParameter(Object* obj, Object* o) {
 	ProcFormalParameter* ast = (ProcFormalParameter*)obj;
-    Frame* frame = (Frame*) o;
+  Frame* frame = (Frame*) o;
 	int argsSize = mach->closureSize;
 	ast->entity = new UnknownRoutine (mach->closureSize, frame->level,-frame->size - argsSize);
-    writeTableDetails(ast);
-    return new Integer(argsSize);
-  }
+  writeTableDetails(ast);
+  return new Integer(argsSize);
+}
 
 Object* Encoder::visitResultFormalParameter(Object* obj, Object* o)
 {
   ResultFormalParameter *ast = (ResultFormalParameter *)obj;
+  Frame* frame = (Frame*) o;
+  int valSize = ((Integer *)ast->T->visit(this, o))->value;
+  UnknownAddress *mainLocation = new UnknownAddress (mach->addressSize, frame->level,-frame->size - mach->addressSize);
+  ResultParameterInfo *entry = new ResultParameterInfo(ast, mainLocation, valSize, false);
+  parameterEntries.push_back(entry);
 
-  return NULL;
+  return new Integer(mach->addressSize);
 }
 
 Object* Encoder::visitValueResultFormalParameter(Object* obj, Object* o)
 {
   ValueResultFormalParameter *ast = (ValueResultFormalParameter *)obj;
-  
-  return NULL;
+  Frame* frame = (Frame*) o;
+  int valSize = ((Integer *)ast->T->visit(this, o))->value;
+  UnknownAddress *mainLocation = new UnknownAddress (mach->addressSize, frame->level,-frame->size - mach->addressSize);
+  ResultParameterInfo *entry = new ResultParameterInfo(ast, mainLocation, valSize, true);
+  parameterEntries.push_back(entry);
+
+  return new Integer(mach->addressSize);
 }
 
 Object* Encoder::visitVarFormalParameter(Object* obj, Object* o) {
 	VarFormalParameter* ast = (VarFormalParameter*)obj;
-    Frame* frame = (Frame*) o;
-    ast->T->visit(this, NULL);
-	ast->entity = new UnknownAddress (mach->addressSize, frame->level,-frame->size - mach->addressSize);
-    writeTableDetails(ast);
-	return new Integer(mach->addressSize);
-  }
+  Frame* frame = (Frame*) o;
+  ast->T->visit(this, NULL);
+  ast->entity = new UnknownAddress (mach->addressSize, frame->level,-frame->size - mach->addressSize);
+  writeTableDetails(ast);
+  return new Integer(mach->addressSize);
+}
 
 
 Object* Encoder::visitEmptyFormalParameterSequence(Object* obj, Object* o) {
 	EmptyFormalParameterSequence* ast = (EmptyFormalParameterSequence*)obj;
-    return new Integer(0);
-  }
+  return new Integer(0);
+}
 
 Object* Encoder::visitMultipleFormalParameterSequence(Object* obj, Object* o) {
 	MultipleFormalParameterSequence* ast = (MultipleFormalParameterSequence*)obj;
-    Frame* frame = (Frame*) o;
-    int argsSize1 = ((Integer*) ast->FPS->visit(this, frame))->value;
-    Frame* frame1 = new Frame(frame, argsSize1);
-    int argsSize2 = ((Integer*) ast->FP->visit(this, frame1))->value;
-    return new Integer(argsSize1 + argsSize2);
-  }
+  Frame* frame = (Frame*) o;
+  int argsSize1 = ((Integer*) ast->FPS->visit(this, frame))->value;
+  Frame* frame1 = new Frame(frame, argsSize1);
+  int argsSize2 = ((Integer*) ast->FP->visit(this, frame1))->value;
+  return new Integer(argsSize1 + argsSize2);
+}
 
 Object* Encoder::visitSingleFormalParameterSequence(Object* obj, Object* o) {
 	SingleFormalParameterSequence* ast = (SingleFormalParameterSequence*)obj;
-    return ast->FP->visit (this, o);
-  }
+  return ast->FP->visit (this, o);
+}
 
 
   // Actual Parameters
