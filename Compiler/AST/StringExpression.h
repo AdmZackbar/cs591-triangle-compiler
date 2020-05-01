@@ -9,7 +9,7 @@
 
 using namespace std;
 
-class StringExpression : public Expression {
+class StringExpression: public Expression {
 
 public:
     StringLiteral* SL;
@@ -19,10 +19,10 @@ public:
     }
 
     Object* visit(Visitor* v, Object* o) {
-    return v->visitStringExpression(this, o);
+        return v->visitStringExpression(this, o);
     }
 
-string class_type(){
+string class_type() {
     string temp = "STRINGEXPRESSION";
     return temp;
 }

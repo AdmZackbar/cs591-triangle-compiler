@@ -9,16 +9,13 @@
 class Checker : public Visitor {
 
 public:
+  IdentificationTable* idTable;
+  SourcePosition* dummyPos;
+  StdEnvironment* getvariables;
+  ErrorReporter* reporter;
 
-
-   IdentificationTable* idTable;
-    SourcePosition* dummyPos;
-    StdEnvironment* getvariables;
-   ErrorReporter* reporter;
-// Commands
-
+  // Commands
   // Always returns NULL. Does not use the given object.
-
   Object* visitAssignCommand(Object* obj, Object* o);
   Object* visitCallCommand(Object* obj, Object* o);
   Object* visitCaseCommand(Object* obj, Object* o);
@@ -34,7 +31,6 @@ public:
   // Expressions
   // Returns the TypeDenoter denoting the type of the expression. Does
   // not use the given object.
-
   Object* visitArrayExpression(Object* obj, Object* o);
   Object* visitBinaryExpression(Object* obj, Object* o);
   Object* visitCallExpression(Object* obj, Object* o);
@@ -50,7 +46,6 @@ public:
 
   // Declarations
   // Always returns NULL. Does not use the given object.
-
   Object* visitBinaryOperatorDeclaration(Object* obj, Object* o);
   Object* visitConstDeclaration(Object* obj, Object* o);
   Object* visitEnumDeclaration(Object* obj, Object* o);
@@ -69,20 +64,17 @@ public:
   // Array Aggregates
   // Returns the TypeDenoter for the Array Aggregate. Does not use the
   // given object.
-
   Object* visitMultipleArrayAggregate(Object* obj, Object* o);
   Object* visitSingleArrayAggregate(Object* obj, Object* o);
 
   // Record Aggregates
   // Returns the TypeDenoter for the Record Aggregate. Does not use the
   // given object.
-
   Object* visitMultipleRecordAggregate(Object* obj, Object* o);
   Object* visitSingleRecordAggregate(Object* obj, Object* o);
 
   // Formal Parameters
   // Always returns NULL. Does not use the given object.
-
   Object* visitConstFormalParameter(Object* obj, Object* o);
   Object* visitFuncFormalParameter(Object* obj, Object* o);
   Object* visitProcFormalParameter(Object* obj, Object* o);
@@ -95,7 +87,6 @@ public:
 
   // Actual Parameters
   // Always returns NULL. Uses the given FormalParameter.
-
   Object* visitConstActualParameter(Object* obj, Object* o);
   Object* visitFuncActualParameter(Object* obj, Object* o);
   Object* visitProcActualParameter(Object* obj, Object* o) ;
@@ -107,7 +98,6 @@ public:
   // Type Denoters
   // Returns the expanded version of the TypeDenoter. Does not
   // use the given object.
-
   Object* visitAnyTypeDenoter(Object* obj, Object* o) ;
   Object* visitArrayTypeDenoter(Object* obj, Object* o);
   Object* visitStringTypeDenoter(Object* obj, Object* o);
@@ -1155,7 +1145,8 @@ Object* Checker::visitOperator(Object* obj, Object* o) {
 Object* Checker::visitStringLiteral(Object* obj, Object* o)
 {
   StringLiteral *S = (StringLiteral *)obj;
-  IntegerLiteral *IL = new IntegerLiteral(to_string(S->spelling.length()), dummyPos);
+  // Must subtract 2 to remove the quotes
+  IntegerLiteral *IL = new IntegerLiteral(to_string(S->spelling.length()-2), dummyPos);
 
   return new StringTypeDenoter(IL, dummyPos);
 }

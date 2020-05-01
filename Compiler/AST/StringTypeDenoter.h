@@ -11,9 +11,9 @@
 
 using namespace std;
 
-class StringTypeDenoter :public TypeDenoter {
-
-public:
+class StringTypeDenoter: public TypeDenoter
+{
+    public:
     IntegerLiteral* IL;
 
     StringTypeDenoter (IntegerLiteral* ilAST, SourcePosition* thePosition):TypeDenoter(thePosition) {
@@ -24,11 +24,21 @@ public:
         return v->visitStringTypeDenoter((Object*)this, o);
     }
 
-	string class_type() {
-	    string temp = "STRINGTYPEDENOTER";
-	    return temp;
+    bool equals (Object *obj)
+    {
+        if (obj && obj->class_type() == "STRINGTYPEDENOTER")
+        {
+            StringTypeDenoter *ast2 = (StringTypeDenoter *)obj;
+            if (atoi(this->IL->spelling.c_str())==atoi(ast2->IL->spelling.c_str()))
+                return true;
+        }
+        return false;
     }
 
+    string class_type() {
+        string temp = "STRINGTYPEDENOTER";
+        return temp;
+    }
 };
 
 #endif

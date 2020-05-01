@@ -64,6 +64,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitEmptyExpression(Object* obj, Object* o) ;
   Object* visitIfExpression(Object* obj, Object* o);
   Object* visitIntegerExpression(Object* obj, Object* o);
+  Object* visitStringExpression(Object* obj, Object* o);
   Object* visitLetExpression(Object* obj, Object* o);
   Object* visitRecordExpression(Object* obj, Object* o);
   Object* visitUnaryExpression(Object* obj, Object* o);
@@ -123,6 +124,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitEnumTypeDenoter(Object* obj, Object* o);
   Object* visitErrorTypeDenoter(Object* obj, Object* o);
   Object* visitSimpleTypeDenoter(Object* obj,Object* o);
+  Object* visitStringTypeDenoter(Object* obj,Object* o);
   Object* visitIntTypeDenoter(Object* obj, Object* o);
   Object* visitRecordTypeDenoter(Object* obj, Object* o);
   Object* visitMultipleFieldTypeDenoter(Object* obj,Object* o);
@@ -133,6 +135,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitIdentifier(Object* obj, Object* o);
   Object* visitIntegerLiteral(Object* obj, Object* o);
   Object* visitOperator(Object* obj, Object* o);
+  Object* visitStringLiteral(Object* obj, Object* o);
 
   // Value-or-variable names
   Object* visitDotVname(Object* obj, Object* o);
@@ -420,80 +423,94 @@ Object* Encoder::visitCallExpression(Object* obj, Object* o) {
   }
 
 Object* Encoder::visitCharacterExpression(Object* obj,Object* o) {
-	  CharacterExpression* ast = (CharacterExpression*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize = (Integer*) ast->type->visit(this, NULL);
-	emit(mach->LOADLop, 0, 0, ast->CL->spelling.at(1));
-    return valSize;
-  }
+  CharacterExpression* ast = (CharacterExpression*)obj;
+  Frame* frame = (Frame*) o;
+  Integer* valSize = (Integer*) ast->type->visit(this, NULL);
+  emit(mach->LOADLop, 0, 0, ast->CL->spelling.at(1));
+  return valSize;
+}
 
 Object* Encoder::visitEmptyExpression(Object* obj, Object* o) {
-	EmptyExpression* ast = (EmptyExpression*)obj;
-    return new Integer(0);
-  }
+  EmptyExpression* ast = (EmptyExpression*)obj;
+  return new Integer(0);
+}
 
 Object* Encoder::visitIfExpression(Object* obj, Object* o) {
-	IfExpression* ast = (IfExpression*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize;
-    int jumpifAddr;
-	int jumpAddr;
+  IfExpression* ast = (IfExpression*)obj;
+  Frame* frame = (Frame*) o;
+  Integer* valSize;
+  int jumpifAddr;
+  int jumpAddr;
 
-    ast->type->visit(this, NULL);
-    ast->E1->visit(this, frame);
-    jumpifAddr = nextInstrAddr;
-	emit(mach->JUMPIFop, mach->falseRep, mach->CBr, 0);
-    valSize = (Integer*) ast->E2->visit(this, frame);
-    jumpAddr = nextInstrAddr;
-	emit(mach->JUMPop, 0, mach->CBr, 0);
-    patch(jumpifAddr, nextInstrAddr);
-    valSize = (Integer*) ast->E3->visit(this, frame);
-    patch(jumpAddr, nextInstrAddr);
-    return valSize;
-  }
+  ast->type->visit(this, NULL);
+  ast->E1->visit(this, frame);
+  jumpifAddr = nextInstrAddr;
+  emit(mach->JUMPIFop, mach->falseRep, mach->CBr, 0);
+  valSize = (Integer*) ast->E2->visit(this, frame);
+  jumpAddr = nextInstrAddr;
+  emit(mach->JUMPop, 0, mach->CBr, 0);
+  patch(jumpifAddr, nextInstrAddr);
+  valSize = (Integer*) ast->E3->visit(this, frame);
+  patch(jumpAddr, nextInstrAddr);
+  return valSize;
+}
 
 Object* Encoder::visitIntegerExpression(Object* obj, Object* o) {
-	IntegerExpression* ast = (IntegerExpression*) obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize = (Integer*) ast->type->visit(this, NULL);
-	emit(mach->LOADLop, 0, 0, atoi(ast->IL->spelling.c_str()));
-    return valSize;
+  IntegerExpression* ast = (IntegerExpression*) obj;
+  Frame* frame = (Frame*) o;
+  Integer* valSize = (Integer*) ast->type->visit(this, NULL);
+  emit(mach->LOADLop, 0, 0, atoi(ast->IL->spelling.c_str()));
+  return valSize;
+}
+
+Object* Encoder::visitStringExpression(Object* obj, Object* o)
+{
+  StringExpression *ast = (StringExpression *)obj;
+
+  Integer *stringSize = (Integer *)ast->type->visit(this, NULL);
+  int ch;
+  for (int i=0; i<stringSize->value; i++)
+  {
+    ch = ast->SL->spelling.at(i+1);
+    emit(mach->LOADLop, 0, 0, ch);
   }
+  return stringSize;
+}
 
 Object* Encoder::visitLetExpression(Object* obj, Object* o) {
 	LetExpression* ast = (LetExpression*)obj;
-    Frame* frame = (Frame*) o;
-    ast->type->visit(this, NULL);
-    int extraSize = ((Integer*) ast->D->visit(this, frame))->value;
-    Frame* frame1 = new Frame(frame, extraSize);
-    Integer* valSize = (Integer*) ast->E->visit(this, frame1);
-    if (extraSize > 0)
-		emit(mach->POPop, valSize->value, 0, extraSize);
-    return valSize;
-  }
+  Frame* frame = (Frame*) o;
+  ast->type->visit(this, NULL);
+  int extraSize = ((Integer*) ast->D->visit(this, frame))->value;
+  Frame* frame1 = new Frame(frame, extraSize);
+  Integer* valSize = (Integer*) ast->E->visit(this, frame1);
+  if (extraSize > 0)
+  emit(mach->POPop, valSize->value, 0, extraSize);
+  return valSize;
+}
 
 Object* Encoder::visitRecordExpression(Object* obj, Object* o){
-	RecordExpression* ast = (RecordExpression*)obj;
-    ast->type->visit(this, NULL);
-    return ast->RA->visit(this, o);
-  }
+  RecordExpression* ast = (RecordExpression*)obj;
+  ast->type->visit(this, NULL);
+  return ast->RA->visit(this, o);
+}
 
 Object* Encoder::visitUnaryExpression(Object* obj, Object* o) {
-	UnaryExpression* ast = (UnaryExpression*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize = (Integer*) ast->type->visit(this, NULL);
-    ast->E->visit(this, frame);
-    ast->O->visit(this, new Frame(frame->level, valSize->value));
-    return valSize;
-  }
+  UnaryExpression* ast = (UnaryExpression*)obj;
+  Frame* frame = (Frame*) o;
+  Integer* valSize = (Integer*) ast->type->visit(this, NULL);
+  ast->E->visit(this, frame);
+  ast->O->visit(this, new Frame(frame->level, valSize->value));
+  return valSize;
+}
 
 Object* Encoder::visitVnameExpression(Object* obj, Object* o) {
-	VnameExpression* ast =(VnameExpression*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize = (Integer*) ast->type->visit(this, NULL);
-    encodeFetch(ast->V, frame, valSize->value);
-    return valSize;
-  }
+  VnameExpression* ast =(VnameExpression*)obj;
+  Frame* frame = (Frame*) o;
+  Integer* valSize = (Integer*) ast->type->visit(this, NULL);
+  encodeFetch(ast->V, frame, valSize->value);
+  return valSize;
+}
 
 
   // Declarations
@@ -726,7 +743,7 @@ Object* Encoder::visitVarInitDeclaration(Object* obj, Object* o)
 	emit(mach->PUSHop, 0, 0, extraSize);
 	ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
   ast->E->visit(this, o);
-  emit(mach->STOREop, extraSize, mach->LBr, frame->size);
+  emit(mach->STOREop, extraSize, displayRegister(frame->level, frame->level), frame->size);
   return new Integer(extraSize);
 }
 
@@ -970,14 +987,21 @@ Object* Encoder::visitEnumTypeDenoter(Object* obj, Object* o)
 }
 
 Object* Encoder::visitErrorTypeDenoter(Object* obj, Object* o) {
-	ErrorTypeDenoter* ast = (ErrorTypeDenoter*)obj;
-    return new Integer(0);
-  }
+  ErrorTypeDenoter* ast = (ErrorTypeDenoter*)obj;
+  return new Integer(0);
+}
 
 Object* Encoder::visitSimpleTypeDenoter(Object* obj,Object* o) {
-	SimpleTypeDenoter* ast = (SimpleTypeDenoter*)obj;
-    return new Integer(0);
-  }
+  SimpleTypeDenoter* ast = (SimpleTypeDenoter*)obj;
+  return new Integer(0);
+}
+
+Object* Encoder::visitStringTypeDenoter(Object* obj,Object* o)
+{
+  StringTypeDenoter *ast = (StringTypeDenoter *)obj;
+
+  return new Integer(atoi(ast->IL->spelling.c_str()));
+}
 
 Object* Encoder::visitIntTypeDenoter(Object* obj, Object* o) {
 	IntTypeDenoter* ast = (IntTypeDenoter*)obj;
@@ -1044,61 +1068,68 @@ Object* Encoder::visitCharacterLiteral(Object* obj, Object* o) {
   }
 
 Object* Encoder::visitIdentifier(Object* obj, Object* o) {
-	Identifier* ast = (Identifier*)obj;
-    Frame* frame = (Frame*) o;
-    if (ast->decl->entity->class_type() == "KNOWNROUTINE") {
-      ObjectAddress* address = ((KnownRoutine*) ast->decl->entity)->address;
-	  emit(mach->CALLop, displayRegister(frame->level, address->level),mach->CBr, address->displacement);
-		}
-	else if (ast->decl->entity->class_type() == "UNKNOWNROUTINE") {
-      ObjectAddress* address = ((UnknownRoutine*) ast->decl->entity)->address;
-	  emit(mach->LOADop, mach->closureSize, displayRegister(frame->level,address->level), address->displacement);
-	  emit(mach->CALLIop, 0, 0, 0);
-		}
-	else if (ast->decl->entity->class_type() == "PRIMITIVEROUTINE") {
-      int displacement = ((PrimitiveRoutine*) ast->decl->entity)->displacement;
-
-	  if (displacement != mach->idDisplacement)
-		  emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
-		}
-	  else if (ast->decl->entity->class_type() == "EQUALITYROUTINE") { // "=" or "\="
-      int displacement = ((EqualityRoutine*) ast->decl->entity)->displacement;
-	  emit(mach->LOADLop, 0, 0, frame->size / 2);
-	  emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
-    }
-    return NULL;
+  Identifier* ast = (Identifier*)obj;
+  Frame* frame = (Frame*) o;
+  if (ast->decl->entity->class_type() == "KNOWNROUTINE") {
+    ObjectAddress* address = ((KnownRoutine*) ast->decl->entity)->address;
+    emit(mach->CALLop, displayRegister(frame->level, address->level),mach->CBr, address->displacement);
   }
+  else if (ast->decl->entity->class_type() == "UNKNOWNROUTINE") {
+    ObjectAddress* address = ((UnknownRoutine*) ast->decl->entity)->address;
+    emit(mach->LOADop, mach->closureSize, displayRegister(frame->level,address->level), address->displacement);
+    emit(mach->CALLIop, 0, 0, 0);
+  }
+  else if (ast->decl->entity->class_type() == "PRIMITIVEROUTINE") {
+    int displacement = ((PrimitiveRoutine*) ast->decl->entity)->displacement;
+
+    if (displacement != mach->idDisplacement)
+      emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
+  }
+  else if (ast->decl->entity->class_type() == "EQUALITYROUTINE") { // "=" or "\="
+    int displacement = ((EqualityRoutine*) ast->decl->entity)->displacement;
+    emit(mach->LOADLop, 0, 0, frame->size / 2);
+    emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
+  }
+  return NULL;
+}
 
 Object* Encoder::visitIntegerLiteral(Object* obj, Object* o) {
-	IntegerLiteral* ast = (IntegerLiteral*)obj;
-    return NULL;
-  }
+  IntegerLiteral* ast = (IntegerLiteral*)obj;
+  return NULL;
+}
 
 Object* Encoder::visitOperator(Object* obj, Object* o) {
-	Operator* ast = (Operator*)obj;
-    Frame* frame = (Frame*) o;
-    if (ast->decl->entity->class_type() == "KNOWNROUTINE") {
-      ObjectAddress* address = ((KnownRoutine*) ast->decl->entity)->address;
-	  emit(mach->CALLop, displayRegister (frame->level, address->level),mach->CBr, address->displacement);
-		}
-	else if (ast->decl->entity->class_type() == "UnknownRoutine") {
-      ObjectAddress* address = ((UnknownRoutine*) ast->decl->entity)->address;
-	  emit(mach->LOADop, mach->closureSize, displayRegister(frame->level,address->level),
-		  address->displacement);
-	  emit(mach->CALLIop, 0, 0, 0);
-		}
-	else if (ast->decl->entity->class_type() =="PRIMITIVEROUTINE") {
-      int displacement = ((PrimitiveRoutine*) ast->decl->entity)->displacement;
-		  if (displacement != mach->idDisplacement)
-			emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
-			}
-		  else if (ast->decl->entity->class_type() == "EQUALITYROUTINE") { // "=" or "\="
-      int displacement = ((EqualityRoutine*) ast->decl->entity)->displacement;
-	  emit(mach->LOADLop, 0, 0, frame->size / 2);
-	  emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
-    }
-    return NULL;
+  Operator* ast = (Operator*)obj;
+  Frame* frame = (Frame*) o;
+  if (ast->decl->entity->class_type() == "KNOWNROUTINE") {
+    ObjectAddress* address = ((KnownRoutine*) ast->decl->entity)->address;
+    emit(mach->CALLop, displayRegister (frame->level, address->level),mach->CBr, address->displacement);
   }
+  else if (ast->decl->entity->class_type() == "UnknownRoutine") {
+    ObjectAddress* address = ((UnknownRoutine*) ast->decl->entity)->address;
+    emit(mach->LOADop, mach->closureSize, displayRegister(frame->level,address->level),
+    address->displacement);
+    emit(mach->CALLIop, 0, 0, 0);
+  }
+  else if (ast->decl->entity->class_type() =="PRIMITIVEROUTINE") {
+    int displacement = ((PrimitiveRoutine*) ast->decl->entity)->displacement;
+    if (displacement != mach->idDisplacement)
+      emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
+  }
+  else if (ast->decl->entity->class_type() == "EQUALITYROUTINE") { // "=" or "\="
+    int displacement = ((EqualityRoutine*) ast->decl->entity)->displacement;
+    emit(mach->LOADLop, 0, 0, frame->size / 2);
+    emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
+  }
+  return NULL;
+}
+
+Object* Encoder::visitStringLiteral(Object* obj, Object* o)
+{
+  StringLiteral *ast = (StringLiteral *)obj;
+
+  return NULL;
+}
 
 
   // Value-or-variable names
@@ -1157,50 +1188,49 @@ Object* Encoder::visitSubscriptVname(Object* obj, Object* o) {
   // Programs
 Object* Encoder::visitProgram(Object* obj, Object* o) {
 	Program* ast = (Program*)obj;
-    return ast->C->visit(this, o);
-  }
+  return ast->C->visit(this, o);
+}
 
 Encoder::Encoder (ErrorReporter* reporter,Checker* check_std) {
-    this->reporter = reporter;
+  this->reporter = reporter;
 	
-	mach=new Machine();
+  mach=new Machine();
 	
-	getvarz = check_std->getvariables;
-	nextInstrAddr = mach->CB;
+  getvarz = check_std->getvariables;
+  nextInstrAddr = mach->CB;
 	
-    elaborateStdEnvironment();
-	
-  }
+  elaborateStdEnvironment();
+}
 
 
-  // Generates code to run a program.
-  // showingTable is true iff entity description details
-  // are to be displayed.
+// Generates code to run a program.
+// showingTable is true iff entity description details
+// are to be displayed.
 void Encoder::encodeRun (Program* theAST, bool showingTable) {
-    tableDetailsReqd = showingTable;
-    //startCodeGeneration();
-    theAST->visit(this, new Frame (0, 0));
-	emit(mach->HALTop, 0, 0, 0);
-  }
+  tableDetailsReqd = showingTable;
+  //startCodeGeneration();
+  theAST->visit(this, new Frame (0, 0));
+  emit(mach->HALTop, 0, 0, 0);
+}
 
-  // Decides run-time representation of a standard constant.
+// Decides run-time representation of a standard constant.
 void Encoder::elaborateStdConst (Object* obj,int value) {
-	Declaration* constDeclaration = (Declaration*)obj;
+  Declaration* constDeclaration = (Declaration*)obj;
 
-    if (constDeclaration->class_type() == "CONSTDECLARATION") {
-      ConstDeclaration* decl = (ConstDeclaration*) constDeclaration;
-      int typeSize= ((Integer*) decl->E->type->visit(this, NULL))->value;
-      decl->entity = new KnownValue(typeSize, value);
-      writeTableDetails(constDeclaration);
-    }
+  if (constDeclaration->class_type() == "CONSTDECLARATION") {
+    ConstDeclaration* decl = (ConstDeclaration*) constDeclaration;
+    int typeSize= ((Integer*) decl->E->type->visit(this, NULL))->value;
+    decl->entity = new KnownValue(typeSize, value);
+    writeTableDetails(constDeclaration);
   }
+}
 
-  // Decides run-time representation of a standard routine.
+// Decides run-time representation of a standard routine.
 void Encoder::elaborateStdPrimRoutine (Object* obj,int routineOffset) {
-	Declaration* routineDeclaration = (Declaration*)obj;
-	routineDeclaration->entity = new PrimitiveRoutine (mach->closureSize, routineOffset);
-    writeTableDetails(routineDeclaration);
-  }
+  Declaration* routineDeclaration = (Declaration*)obj;
+  routineDeclaration->entity = new PrimitiveRoutine (mach->closureSize, routineOffset);
+  writeTableDetails(routineDeclaration);
+}
 
 void Encoder::elaborateStdEqRoutine (Object* obj,int routineOffset) {
 	Declaration* routineDeclaration = (Declaration*)obj;

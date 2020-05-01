@@ -1,0 +1,10 @@
+let
+    var n : string 3;
+    var x := "hello"
+in begin
+    n := "lul";
+    if n = "lul" then
+        put('y')
+    else
+        put('n')
+end

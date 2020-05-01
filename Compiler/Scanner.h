@@ -145,7 +145,7 @@ int Scanner::scanToken() {
 		  return Token::ERROR;break;}
   case '"':
     takeIt();
-    while (currentChar != '"' || currentChar != EOF)
+    while (currentChar != '"' && currentChar != EOF)
       takeIt();
     if (currentChar == '"')
     {
