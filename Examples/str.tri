@@ -6,5 +6,7 @@ in begin
     if n = "lul" then
         put('y')
     else
-        put('n')
+        put('n');
+    puteol();
+    put(n[1]);
 end

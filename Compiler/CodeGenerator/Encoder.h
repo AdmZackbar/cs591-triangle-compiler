@@ -1151,38 +1151,38 @@ Object* Encoder::visitSimpleVname(Object* obj, Object* o) {
 }
 
 Object* Encoder::visitSubscriptVname(Object* obj, Object* o) {
-	SubscriptVname* ast = (SubscriptVname*)obj;
-    Frame* frame = (Frame*) o;
-    RuntimeEntity* baseObject;
-    int elemSize;
-	int indexSize;
+  SubscriptVname* ast = (SubscriptVname*)obj;
+  Frame* frame = (Frame*) o;
+  RuntimeEntity* baseObject;
+  int elemSize;
+  int indexSize;
 
-    baseObject = (RuntimeEntity*) ast->V->visit(this, frame);
-    ast->offset = ast->V->offset;
-    ast->indexed = ast->V->indexed;
-    elemSize = ((Integer*) ast->type->visit(this, NULL))->value;
+  baseObject = (RuntimeEntity*) ast->V->visit(this, frame);
+  ast->offset = ast->V->offset;
+  ast->indexed = ast->V->indexed;
+  elemSize = ((Integer*) ast->type->visit(this, NULL))->value;
 
-    if (ast->E->class_type() == "INTEGEREXPRESSION") {
-      IntegerLiteral* IL = ((IntegerExpression*) ast->E)->IL;
-      ast->offset = ast->offset + atoi(IL->spelling.c_str()) * elemSize;
-		} 
-	else {
-      // v-name is indexed by a proper expression, not a literal
-      if (ast->indexed)
-		  frame->size = frame->size + mach->integerSize;
-      indexSize = ((Integer*) ast->E->visit(this, frame))->value;
-
-      if (elemSize != 1) {
-		  emit(mach->LOADLop, 0, 0, elemSize);
-		  emit(mach->CALLop, mach->SBr, mach->PBr,mach->multDisplacement);
-      }
-      if (ast->indexed)
-		  emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-      else
-        ast->indexed = true;
-    }
-    return baseObject;
+  if (ast->E->class_type() == "INTEGEREXPRESSION") {
+    IntegerLiteral* IL = ((IntegerExpression*) ast->E)->IL;
+    ast->offset = ast->offset + atoi(IL->spelling.c_str()) * elemSize;
   }
+  else {
+    // v-name is indexed by a proper expression, not a literal
+    if (ast->indexed)
+      frame->size = frame->size + mach->integerSize;
+    indexSize = ((Integer*) ast->E->visit(this, frame))->value;
+
+    if (elemSize != 1) {
+      emit(mach->LOADLop, 0, 0, elemSize);
+      emit(mach->CALLop, mach->SBr, mach->PBr,mach->multDisplacement);
+    }
+    if (ast->indexed)
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+    else
+      ast->indexed = true;
+  }
+  return baseObject;
+}
 
 
   // Programs

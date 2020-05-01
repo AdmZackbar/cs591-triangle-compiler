@@ -1266,13 +1266,19 @@ Object* Checker::visitSubscriptVname(Object* obj, Object* o) {
   ast->variable = ast->V->variable;
   TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
 	if (vType != getvariables->errorType) {
-    if (! (vType->class_type()== "ARRAYTYPEDENOTER"))
-      reporter->reportError ("array expected here", "", ast->V->position);
-    else {
+    if (vType->class_type() == "ARRAYTYPEDENOTER") {
       if (! eType->equals(getvariables->integerType))
         reporter->reportError ("Integer expression expected here", "", ast->E->position);
       ast->type = ((ArrayTypeDenoter*) vType)->T;
     }
+    else if (vType->class_type() == "STRINGTYPEDENOTER")
+    {
+      if (!eType->equals(getvariables->integerType))
+        reporter->reportError ("Integer expression expected here", "", ast->E->position);
+      ast->type = getvariables->charType;
+    }
+    else
+      reporter->reportError ("array expected here", "", ast->V->position);
   }
   return ast->type;
 }
