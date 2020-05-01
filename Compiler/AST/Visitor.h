@@ -34,6 +34,7 @@ public:
 	virtual Object* visitBinaryOperatorDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitConstDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitEnumDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitEnumValueDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncBinOpDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitFuncUnaryOpDeclaration(Object* ast, Object* o){ return NULL; }

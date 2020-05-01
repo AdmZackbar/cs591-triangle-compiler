@@ -73,6 +73,8 @@ vector<ResultParameterInfo *> parameterEntries;
   // Declarations
   Object* visitBinaryOperatorDeclaration(Object* obj,Object* o);
   Object* visitConstDeclaration(Object* obj, Object* o);
+  Object* visitEnumDeclaration(Object* obj, Object* o);
+  Object* visitEnumValueDeclaration(Object* obj, Object* o);
   Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
@@ -118,6 +120,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitArrayTypeDenoter(Object* obj, Object* o);
   Object* visitBoolTypeDenoter(Object* obj, Object* o);
   Object* visitCharTypeDenoter(Object* obj, Object* o);
+  Object* visitEnumTypeDenoter(Object* obj, Object* o);
   Object* visitErrorTypeDenoter(Object* obj, Object* o);
   Object* visitSimpleTypeDenoter(Object* obj,Object* o);
   Object* visitIntTypeDenoter(Object* obj, Object* o);
@@ -519,6 +522,26 @@ Object* Encoder::visitConstDeclaration(Object* obj, Object* o) {
   }
   writeTableDetails(ast);
   return new Integer(extraSize);
+}
+
+Object* Encoder::visitEnumDeclaration(Object* obj, Object* o)
+{
+  EnumDeclaration *ast = (EnumDeclaration *)obj;
+
+  for (int i=0; i<ast->I.size(); i++)
+  {
+    if (ast->I[i]->decl)
+      ast->I[i]->decl->entity = new KnownValue(mach->integerSize, i+1);
+  }
+
+  return new Integer(0);
+}
+
+Object* Encoder::visitEnumValueDeclaration(Object* obj, Object* o)
+{
+  EnumValueDeclaration *ast = (EnumValueDeclaration *)obj;
+
+  return new Integer(0);
 }
 
 Object* Encoder::visitFuncBinOpDeclaration(Object* obj, Object* o)
@@ -939,6 +962,13 @@ Object* Encoder::visitCharTypeDenoter(Object* obj, Object* o) {
 	return new Integer(mach->characterSize);
   }
 
+Object* Encoder::visitEnumTypeDenoter(Object* obj, Object* o)
+{
+  EnumTypeDenoter *ast = (EnumTypeDenoter *)obj;
+
+  return new Integer(mach->integerSize);
+}
+
 Object* Encoder::visitErrorTypeDenoter(Object* obj, Object* o) {
 	ErrorTypeDenoter* ast = (ErrorTypeDenoter*)obj;
     return new Integer(0);
@@ -1074,20 +1104,20 @@ Object* Encoder::visitOperator(Object* obj, Object* o) {
   // Value-or-variable names
 Object* Encoder::visitDotVname(Object* obj, Object* o) {
 	DotVname* ast = (DotVname*)obj;
-    Frame* frame = (Frame*) o;
-    RuntimeEntity* baseObject = (RuntimeEntity*) ast->V->visit(this, frame);
-    ast->offset = ast->V->offset + ((Field*) ast->I->decl->entity)->fieldOffset;
-                   // I.decl points to the appropriate record field
-    ast->indexed = ast->V->indexed;
-    return baseObject;
-  }
+  Frame* frame = (Frame*) o;
+  RuntimeEntity* baseObject = (RuntimeEntity*) ast->V->visit(this, frame);
+  ast->offset = ast->V->offset + ((Field*) ast->I->decl->entity)->fieldOffset;
+                  // I.decl points to the appropriate record field
+  ast->indexed = ast->V->indexed;
+  return baseObject;
+}
 
 Object* Encoder::visitSimpleVname(Object* obj, Object* o) {
 	SimpleVname* ast = (SimpleVname*)obj;
-    ast->offset = 0;
-    ast->indexed = false;
-    return ast->I->decl->entity;
-  }
+  ast->offset = 0;
+  ast->indexed = false;
+  return ast->I->decl->entity;
+}
 
 Object* Encoder::visitSubscriptVname(Object* obj, Object* o) {
 	SubscriptVname* ast = (SubscriptVname*)obj;
@@ -1341,54 +1371,48 @@ void Encoder::encodeStore(Vname* V, Frame* frame, int valSize) {
     }
   }
 
-  // Generates code to fetch the value of a named constant or variable
-  // and push it on to the stack.
-  // currentLevel is the routine level where the vname occurs.
-  // frameSize is the anticipated size of the local stack frame when
-  // the constant or variable is fetched at run-time.
-  // valSize is the size of the constant or variable's value.
-
-
-
-void Encoder::encodeFetch(Vname* V, Frame* frame, int valSize) {
-
-    RuntimeEntity* baseObject = (RuntimeEntity*) V->visit(this, frame);
-    // If indexed = true, code will have been generated to load an index value.
-    if (valSize > 255) {
-		reporter->reportRestriction("can't load values larger than 255 words");
-      valSize = 255; // to allow code generation to continue
-    }
-	if (baseObject->class_type() == "KNOWNVALUE") {
-      // presumably offset = 0 and indexed = false
-      int value = ((KnownValue*) baseObject)->value;
-	  emit(mach->LOADLop, 0, 0, value);
-	} else if ((baseObject->class_type() == "UNKNOWNVALUE") ||
-               (baseObject->class_type() == "KNOWNADDRESS")) {
-				   ObjectAddress* address = (baseObject->class_type() == "UNKNOWNVALUE") ?
-                              ((UnknownValue*) baseObject)->address :
-                              ((KnownAddress*) baseObject)->address;
-      if (V->indexed) {
-		  emit(mach->LOADAop, 0, displayRegister(frame->level, address->level),
-             address->displacement + V->offset);
-		  emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-		  emit(mach->LOADIop, valSize, 0, 0);
-      } else
-		  emit(mach->LOADop, valSize, displayRegister(frame->level,
-	     address->level), address->displacement + V->offset);
-		}
-	else if (baseObject->class_type() == "UNKNOWNADDRESS") {
-      ObjectAddress* address = ((UnknownAddress*) baseObject)->address;
-	  emit(mach->LOADop, mach->addressSize, displayRegister(frame->level,
-           address->level), address->displacement);
-      if (V->indexed)
-        emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-      if (V->offset != 0) {
-        emit(mach->LOADLop, 0, 0, V->offset);
-        emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-      }
-      emit(mach->LOADIop, valSize, 0, 0);
-    }
+// Generates code to fetch the value of a named constant or variable
+// and push it on to the stack.
+// currentLevel is the routine level where the vname occurs.
+// frameSize is the anticipated size of the local stack frame when
+// the constant or variable is fetched at run-time.
+// valSize is the size of the constant or variable's value.
+void Encoder::encodeFetch(Vname* V, Frame* frame, int valSize)
+{
+  RuntimeEntity* baseObject = (RuntimeEntity*) V->visit(this, frame);
+  // If indexed = true, code will have been generated to load an index value.
+  if (valSize > 255) {
+    reporter->reportRestriction("can't load values larger than 255 words");
+    valSize = 255; // to allow code generation to continue
   }
+  if (baseObject->class_type() == "KNOWNVALUE") {
+    // presumably offset = 0 and indexed = false
+    int value = ((KnownValue*) baseObject)->value;
+    emit(mach->LOADLop, 0, 0, value);
+	} else if ( (baseObject->class_type() == "UNKNOWNVALUE") ||
+              (baseObject->class_type() == "KNOWNADDRESS")) {
+    ObjectAddress* address = (baseObject->class_type() == "UNKNOWNVALUE") ?
+      ((UnknownValue*) baseObject)->address :
+      ((KnownAddress*) baseObject)->address;
+    if (V->indexed) {
+      emit(mach->LOADAop, 0, displayRegister(frame->level, address->level), address->displacement + V->offset);
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+      emit(mach->LOADIop, valSize, 0, 0);
+    } else
+      emit(mach->LOADop, valSize, displayRegister(frame->level, address->level), address->displacement + V->offset);
+  }
+	else if (baseObject->class_type() == "UNKNOWNADDRESS") {
+    ObjectAddress* address = ((UnknownAddress*) baseObject)->address;
+    emit(mach->LOADop, mach->addressSize, displayRegister(frame->level, address->level), address->displacement);
+    if (V->indexed)
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+    if (V->offset != 0) {
+      emit(mach->LOADLop, 0, 0, V->offset);
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+    }
+    emit(mach->LOADIop, valSize, 0, 0);
+  }
+}
 
   // Generates code to compute and push the address of a named variable.
   // vname is the program phrase that names this variable.

@@ -1,0 +1,10 @@
+let
+    enum type guns ~ ( pistol, rifle, smg, shotgun );
+    var awp : guns
+in begin
+    awp := rifle;
+    if awp = rifle then
+        put('y')
+    else
+        put('n')
+end

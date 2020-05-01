@@ -54,6 +54,7 @@ public:
   Object* visitBinaryOperatorDeclaration(Object* obj, Object* o);
   Object* visitConstDeclaration(Object* obj, Object* o);
   Object* visitEnumDeclaration(Object* obj, Object* o);
+  Object* visitEnumValueDeclaration(Object* ast, Object* o);
   Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
@@ -232,14 +233,14 @@ public:
 Object* Checker::visitAssignCommand(Object* obj, Object* o) {
 	printdetails(obj);
 	AssignCommand* ast = (AssignCommand*)obj;
-    TypeDenoter* vType = (TypeDenoter*)ast->V->visit(this, NULL);
-    TypeDenoter* eType = (TypeDenoter*)ast->E->visit(this, NULL);
-    if (!ast->V->variable)
-      reporter->reportError("LHS of assignment is not a variable", "", ast->V->position);
-    if (! eType->equals(vType))
-      reporter->reportError ("assignment incompatibilty", "", ast->position);
-    return NULL;
-  }
+  TypeDenoter* vType = (TypeDenoter*)ast->V->visit(this, NULL);
+  TypeDenoter* eType = (TypeDenoter*)ast->E->visit(this, NULL);
+  if (!ast->V->variable)
+    reporter->reportError("LHS of assignment is not a variable", "", ast->V->position);
+  if (! eType->equals(vType))
+    reporter->reportError ("assignment incompatibilty", "", ast->position);
+  return NULL;
+}
 
 
 Object* Checker::visitCallCommand(Object* obj, Object* o) {
@@ -560,14 +561,18 @@ Object* Checker::visitEnumDeclaration(Object* obj, Object* o)
 {
   EnumDeclaration *ast = (EnumDeclaration *)obj;
 
-  //ast->EnumName->visit(this, NULL);
-  //idTable->openScope();
+  idTable->enter(ast->EnumName->spelling, ast);
   for (int i=0; i<ast->I.size(); i++)
   {
-    ast->I[i]->visit(this, NULL);
+    ast->I[i]->decl = new EnumValueDeclaration(ast->I[i], i+1, ast, ast->position);
+    idTable->enter(ast->I[i]->spelling, (Declaration *)ast->I[i]->decl);
   }
-  //idTable->closeScope();
 
+  return NULL;
+}
+
+Object* Checker::visitEnumValueDeclaration(Object* ast, Object* o)
+{
   return NULL;
 }
 
@@ -678,8 +683,8 @@ Object* Checker::visitSequentialDeclaration(Object* obj, Object* o) {
 Object* Checker::visitTypeDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	TypeDeclaration* ast = (TypeDeclaration*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    idTable->enter (ast->I->spelling, ast);
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  idTable->enter (ast->I->spelling, ast);
 
 	if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -1052,100 +1057,100 @@ Object* Checker::visitStringTypeDenoter(Object* obj, Object* o)
 }
 
 Object* Checker::visitBoolTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	BoolTypeDenoter* ast = (BoolTypeDenoter*)obj;
-	return getvariables->booleanType;
-  }
+  printdetails(obj);
+  BoolTypeDenoter* ast = (BoolTypeDenoter*)obj;
+  return getvariables->booleanType;
+}
 
 Object* Checker::visitCharTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	CharTypeDenoter* ast = (CharTypeDenoter*)obj;
-	return getvariables->charType;
-  }
+  printdetails(obj);
+  CharTypeDenoter* ast = (CharTypeDenoter*)obj;
+  return getvariables->charType;
+}
 
 Object* Checker::visitErrorTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	ErrorTypeDenoter* ast = (ErrorTypeDenoter*)obj;
-	return getvariables->errorType;
-  }
+  printdetails(obj);
+  ErrorTypeDenoter* ast = (ErrorTypeDenoter*)obj;
+  return getvariables->errorType;
+}
 
 Object* Checker::visitSimpleTypeDenoter(Object* obj, Object* o) {
 	printdetails(obj);
-	  SimpleTypeDenoter* ast = (SimpleTypeDenoter*)obj;
+  SimpleTypeDenoter* ast = (SimpleTypeDenoter*)obj;
 
-    Declaration* binding = (Declaration*) ast->I->visit(this, NULL);
+  Declaration* binding = (Declaration*) ast->I->visit(this, NULL);
 
-    if (binding == NULL) {
-		reportUndeclared(ast->I);
-		return getvariables->errorType;
-		}
-
-	else if (! (binding->class_type() == "TYPEDECLARATION")) {
-		reporter->reportError ("\"%\" is not a type identifier",ast->I->spelling, ast->I->position);
-		return getvariables->errorType;
-    }
-
-    return ((TypeDeclaration*) binding)->T;
+  if (binding == NULL) {
+    reportUndeclared(ast->I);
+    return getvariables->errorType;
   }
+  if (binding->class_type() == "TYPEDECLARATION")
+    return ((TypeDeclaration*) binding)->T;
+  if (binding->class_type() == "ENUMDECLARATION")
+    return ((EnumDeclaration*) binding)->T;
+  
+  reporter->reportError ("\"%\" is not a type identifier",ast->I->spelling, ast->I->position);
+  return getvariables->errorType;
+}
 
 Object* Checker::visitIntTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	IntTypeDenoter* ast = (IntTypeDenoter*)obj;
-	return getvariables->integerType;
-  }
+  printdetails(obj);
+  IntTypeDenoter* ast = (IntTypeDenoter*)obj;
+  return getvariables->integerType;
+}
 
 Object* Checker::visitRecordTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	RecordTypeDenoter* ast = (RecordTypeDenoter*)obj;
-    ast->FT = (FieldTypeDenoter*) ast->FT->visit(this, NULL);
-    return ast;
-  }
+  printdetails(obj);
+  RecordTypeDenoter* ast = (RecordTypeDenoter*)obj;
+  ast->FT = (FieldTypeDenoter*) ast->FT->visit(this, NULL);
+  return ast;
+}
 
 Object* Checker::visitMultipleFieldTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	MultipleFieldTypeDenoter* ast = (MultipleFieldTypeDenoter*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    ast->FT->visit(this, NULL);
-    return ast;
-  }
+  printdetails(obj);
+  MultipleFieldTypeDenoter* ast = (MultipleFieldTypeDenoter*)obj;
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  ast->FT->visit(this, NULL);
+  return ast;
+}
 
 Object* Checker::visitSingleFieldTypeDenoter(Object* obj, Object* o) {
-	printdetails(obj);
-	SingleFieldTypeDenoter* ast = (SingleFieldTypeDenoter*)obj;
-    ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-    return ast;
-  }
+  printdetails(obj);
+  SingleFieldTypeDenoter* ast = (SingleFieldTypeDenoter*)obj;
+  ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
+  return ast;
+}
 
   // Literals, Identifiers and Operators
 Object* Checker::visitCharacterLiteral(Object* obj, Object* o) {
-	printdetails(obj);
-	CharacterLiteral* CL = (CharacterLiteral*)obj;
-	return getvariables->charType;
-  }
+  printdetails(obj);
+  CharacterLiteral* CL = (CharacterLiteral*)obj;
+  return getvariables->charType;
+}
 
 Object* Checker::visitIdentifier(Object* obj, Object* o) {
-	printdetails(obj);
-	Identifier* I = (Identifier*)obj;
-    Declaration* binding = idTable->retrieve(I->spelling);
-    if (binding != NULL)
-      I->decl = binding;
-    return binding;
-  }
+  printdetails(obj);
+  Identifier* I = (Identifier*)obj;
+  Declaration* binding = idTable->retrieve(I->spelling);
+  if (binding != NULL)
+    I->decl = binding;
+  return binding;
+}
 
 Object* Checker::visitIntegerLiteral(Object* obj, Object* o) {
-	printdetails(obj);
-	IntegerLiteral* IL = (IntegerLiteral*)obj;
-	return getvariables->integerType;
-  }
+  printdetails(obj);
+  IntegerLiteral* IL = (IntegerLiteral*)obj;
+  return getvariables->integerType;
+}
 
 Object* Checker::visitOperator(Object* obj, Object* o) {
-	printdetails(obj);
-	Operator* O = (Operator*)obj;
-    Declaration* binding = idTable->retrieve(O->spelling);
-    if (binding != NULL)
-      O->decl = binding;
-    return binding;
-  }
+  printdetails(obj);
+  Operator* O = (Operator*)obj;
+  Declaration* binding = idTable->retrieve(O->spelling);
+  if (binding != NULL)
+    O->decl = binding;
+  return binding;
+}
 
 Object* Checker::visitStringLiteral(Object* obj, Object* o)
 {
@@ -1233,6 +1238,11 @@ Object* Checker::visitSimpleVname(Object* obj, Object* o) {
     else if (binding->class_type() == "VARDECLARATION" || binding->class_type() == "VARINITDECLARATION") {
       ast->type = ((VarDeclaration*) binding)->T;
       ast->variable = true;
+    }
+    else if (binding->class_type() == "ENUMVALUEDECLARATION")
+    {
+      ast->type = ((EnumValueDeclaration *) binding)->P->T;
+      ast->variable = false; // TODO check if this should be true or false
     }
     else if (binding->class_type() == "CONSTFORMALPARAMETER") {
       ast->type = ((ConstFormalParameter*) binding)->T;

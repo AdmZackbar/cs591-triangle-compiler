@@ -1,18 +1,28 @@
 let
-    proc copy (x: Integer, var y: Integer) ~
+    var a := 2;
+    var b := 2;
+    proc test1 (in out x: Integer) ~
     begin
+        x := x + 1;
+        x := x * a;
         putint(x);
-        y:=x;
     end;
-    proc copy2 (in x: Integer, in out y: Integer) ~
+    proc test2 (var x: Integer) ~
     begin
+        x := x + 1;
+        x := x * b;
         putint(x);
-        y := x;
-        putint(y);
-    end;
-    var y := 2;
-    var n := 1
+    end
 in begin
-    copy2(n, var y);
-    putint(y);
+    putint(a);
+    puteol();
+    test1(var a);
+    puteol();
+    putint(a);
+    puteol();
+    putint(b);
+    puteol();
+    test2(var b);
+    puteol();
+    putint(b);
 end
