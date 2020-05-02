@@ -25,6 +25,7 @@ public:
 	virtual Object* visitIfExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntegerExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitLetExpression(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitNilExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitRecordExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitStringExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitUnaryExpression(Object* ast, Object* o){ return NULL; }
@@ -40,6 +41,7 @@ public:
 	virtual Object* visitFuncUnaryOpDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitPackageDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitProcDeclaration(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitRecTypeDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSequentialDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitTypeDeclaration(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitUnaryOperatorDeclaration(Object* ast, Object* o){ return NULL; }
@@ -83,6 +85,8 @@ public:
 	virtual Object* visitCharTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitEnumTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitErrorTypeDenoter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitNilTypeDenoter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitPointerTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSimpleTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitStringTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntTypeDenoter(Object* ast, Object* o){ return NULL; }

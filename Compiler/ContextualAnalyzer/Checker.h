@@ -39,6 +39,7 @@ public:
   Object* visitIfExpression(Object* obj, Object* o);
   Object* visitIntegerExpression(Object* obj, Object* o);
   Object* visitLetExpression(Object* obj, Object* o);
+  Object* visitNilExpression(Object* obj, Object* o);
   Object* visitRecordExpression(Object* obj, Object* o);
   Object* visitStringExpression(Object* obj, Object* o);
   Object* visitUnaryExpression(Object* obj, Object* o);
@@ -55,6 +56,7 @@ public:
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
   Object* visitPackageDeclaration(Object* obj, Object* o);
   Object* visitProcDeclaration(Object* obj, Object* o);
+  Object* visitRecTypeDeclaration(Object* obj, Object* o);
   Object* visitSequentialDeclaration(Object* obj, Object* o);
   Object* visitTypeDeclaration(Object* obj, Object* o);
   Object* visitUnaryOperatorDeclaration(Object* obj, Object* o);
@@ -89,7 +91,7 @@ public:
   // Always returns NULL. Uses the given FormalParameter.
   Object* visitConstActualParameter(Object* obj, Object* o);
   Object* visitFuncActualParameter(Object* obj, Object* o);
-  Object* visitProcActualParameter(Object* obj, Object* o) ;
+  Object* visitProcActualParameter(Object* obj, Object* o);
   Object* visitVarActualParameter(Object* obj, Object* o);
   Object* visitEmptyActualParameterSequence(Object* obj, Object* o);
   Object* visitMultipleActualParameterSequence(Object* obj, Object* o);
@@ -98,14 +100,16 @@ public:
   // Type Denoters
   // Returns the expanded version of the TypeDenoter. Does not
   // use the given object.
-  Object* visitAnyTypeDenoter(Object* obj, Object* o) ;
+  Object* visitAnyTypeDenoter(Object* obj, Object* o);
   Object* visitArrayTypeDenoter(Object* obj, Object* o);
   Object* visitStringTypeDenoter(Object* obj, Object* o);
-  Object* visitBoolTypeDenoter(Object* obj, Object* o) ;
-  Object* visitCharTypeDenoter(Object* obj, Object* o) ;
+  Object* visitBoolTypeDenoter(Object* obj, Object* o);
+  Object* visitCharTypeDenoter(Object* obj, Object* o);
   Object* visitErrorTypeDenoter(Object* obj, Object* o);
+  Object* visitNilTypeDenoter(Object* obj, Object* o);
+  Object* visitPointerTypeDenoter(Object* obj, Object* o);
   Object* visitSimpleTypeDenoter(Object* obj, Object* o);
-  Object* visitIntTypeDenoter(Object* obj, Object* o) ;
+  Object* visitIntTypeDenoter(Object* obj, Object* o);
   Object* visitRecordTypeDenoter(Object* obj, Object* o);
   Object* visitMultipleFieldTypeDenoter(Object* obj, Object* o);
   Object* visitSingleFieldTypeDenoter(Object* obj, Object* o);
@@ -479,6 +483,15 @@ Object* Checker::visitLetExpression(Object* obj, Object* o) {
   return ast->type;
 }
 
+Object* Checker::visitNilExpression(Object* obj, Object* o)
+{
+  NilExpression *ast = (NilExpression *)obj;
+
+  ast->type = getvariables->nilType;
+
+  return ast->type;
+}
+
 Object* Checker::visitRecordExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	RecordExpression* ast = (RecordExpression*)obj;
@@ -658,6 +671,22 @@ Object* Checker::visitProcDeclaration(Object* obj, Object* o) {
   ast->FPS->visit(this, NULL);
   ast->C->visit(this, NULL);
   idTable->closeScope();
+
+  return NULL;
+}
+
+Object* Checker::visitRecTypeDeclaration(Object* obj, Object* o)
+{
+  RecTypeDeclaration *ast = (RecTypeDeclaration *)obj;
+  idTable->enter(ast->I->spelling, ast);
+  if (ast->duplicated)
+    reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
+  
+  PointerTypeDenoter *type = new PointerTypeDenoter(dummyPos);;
+  TypeDenoter *childType = ast->T;
+  ast->T = type;
+  childType = (TypeDenoter *) childType->visit(this, NULL);
+  type->T = childType;
 
   return NULL;
 }
@@ -1064,6 +1093,16 @@ Object* Checker::visitErrorTypeDenoter(Object* obj, Object* o) {
   return getvariables->errorType;
 }
 
+Object* Checker::visitNilTypeDenoter(Object* obj, Object* o)
+{
+  return getvariables->nilType;
+}
+
+Object* Checker::visitPointerTypeDenoter(Object* obj, Object* o)
+{
+  return obj;
+}
+
 Object* Checker::visitSimpleTypeDenoter(Object* obj, Object* o) {
 	printdetails(obj);
   SimpleTypeDenoter* ast = (SimpleTypeDenoter*)obj;
@@ -1075,11 +1114,13 @@ Object* Checker::visitSimpleTypeDenoter(Object* obj, Object* o) {
     return getvariables->errorType;
   }
   if (binding->class_type() == "TYPEDECLARATION")
-    return ((TypeDeclaration*) binding)->T;
+    return ((TypeDeclaration *) binding)->T;
   if (binding->class_type() == "ENUMDECLARATION")
-    return ((EnumDeclaration*) binding)->T;
+    return ((EnumDeclaration *) binding)->T;
+  if (binding->class_type() == "RECTYPEDECLARATION")
+    return ((RecTypeDeclaration *) binding)->T;
   
-  reporter->reportError ("\"%\" is not a type identifier",ast->I->spelling, ast->I->position);
+  reporter->reportError ("\"%\" is not a type identifier", ast->I->spelling, ast->I->position);
   return getvariables->errorType;
 }
 
@@ -1177,6 +1218,8 @@ Object* Checker::visitDotVname(Object* obj, Object* o) {
 	DotVname* ast = (DotVname*)obj;
   ast->type = NULL;
   TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
+  if (vType->class_type() == "POINTERTYPEDENOTER")
+    vType = ((PointerTypeDenoter *)vType)->T;
   ast->variable = ast->V->variable;
   if (! (vType->class_type() == "RECORDTYPEDENOTER"))
     reporter->reportError ("record expected here", "", ast->V->position);
@@ -1449,6 +1492,7 @@ void Checker::establishStdEnvironment () {
   getvariables->charType = new CharTypeDenoter(dummyPos);
   getvariables->anyType = new AnyTypeDenoter(dummyPos);
   getvariables->errorType = new ErrorTypeDenoter(dummyPos);
+  getvariables->nilType = new NilTypeDenoter(dummyPos);
 
   getvariables->booleanDecl = declareStdType("Boolean", getvariables->booleanType);
   getvariables->falseDecl = declareStdConst("false", getvariables->booleanType);

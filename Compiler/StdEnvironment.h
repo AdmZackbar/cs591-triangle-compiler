@@ -17,7 +17,7 @@ public:
 	 TypeDenoter* booleanType;
 	 TypeDenoter* charType;
 	 TypeDenoter* integerType;
-   TypeDenoter *stringType;
+   TypeDenoter *nilType;
 	 TypeDenoter* anyType;
 	 TypeDenoter* errorType;
 

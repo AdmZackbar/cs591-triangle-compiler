@@ -401,44 +401,43 @@ Command* Parser::parseSingleCommand() {
 ///////////////////////////////////////////////////////////////////////////////
 
 Expression* Parser::parseExpression() {
-    Expression* expressionAST = NULL; // in case there's a syntactic error
+  Expression* expressionAST = NULL; // in case there's a syntactic error
 
-    SourcePosition* expressionPos = new SourcePosition();
+  SourcePosition* expressionPos = new SourcePosition();
 
-    start (expressionPos);
+  start (expressionPos);
 
-    switch (currentToken->kind) {
+  switch (currentToken->kind) {
+    case Token::LET:
+    {
+      acceptIt();
+      Declaration* dAST = parseDeclaration();
+      accept(Token::IN_IN);
+      Expression* eAST = parseExpression();
+      finish(expressionPos);
+      expressionAST = new LetExpression(dAST, eAST, expressionPos);
+    }
+    break;
 
-	case Token::LET:
-      {
-        acceptIt();
-        Declaration* dAST = parseDeclaration();
-		accept(Token::IN_IN);
-        Expression* eAST = parseExpression();
-        finish(expressionPos);
-        expressionAST = new LetExpression(dAST, eAST, expressionPos);
-      }
-      break;
-
-	case Token::IF:
-      {
-        acceptIt();
-        Expression* e1AST = parseExpression();
-		accept(Token::THEN);
-        Expression* e2AST = parseExpression();
-		accept(Token::ELSE);
-        Expression* e3AST = parseExpression();
-        finish(expressionPos);
-        expressionAST = new IfExpression(e1AST, e2AST, e3AST, expressionPos);
-      }
-      break;
+    case Token::IF:
+    {
+      acceptIt();
+      Expression* e1AST = parseExpression();
+      accept(Token::THEN);
+      Expression* e2AST = parseExpression();
+      accept(Token::ELSE);
+      Expression* e3AST = parseExpression();
+      finish(expressionPos);
+      expressionAST = new IfExpression(e1AST, e2AST, e3AST, expressionPos);
+    }
+    break;
 
     default:
       expressionAST = parseSecondaryExpression();
       break;
-    }
-    return expressionAST;
   }
+  return expressionAST;
+}
 
 Expression* Parser::parseSecondaryExpression() {
     Expression* expressionAST = NULL; // in case there's a syntactic error
@@ -457,28 +456,27 @@ Expression* Parser::parseSecondaryExpression() {
   }
 
 Expression* Parser::parsePrimaryExpression() {
-    Expression* expressionAST = NULL; // in case there's a syntactic error
+  Expression* expressionAST = NULL; // in case there's a syntactic error
 
-    SourcePosition* expressionPos = new SourcePosition();
-    start(expressionPos);
+  SourcePosition* expressionPos = new SourcePosition();
+  start(expressionPos);
 
-    switch (currentToken->kind) {
+  switch (currentToken->kind) {
+  case Token::INTLITERAL:
+  {
+    IntegerLiteral* ilAST = parseIntegerLiteral();
+    finish(expressionPos);
+    expressionAST = new IntegerExpression(ilAST, expressionPos);
+  }
+  break;
 
-	case Token::INTLITERAL:
-      {
-        IntegerLiteral* ilAST = parseIntegerLiteral();
-        finish(expressionPos);
-        expressionAST = new IntegerExpression(ilAST, expressionPos);
-      }
-      break;
-
-	case Token::CHARLITERAL:
-      {
-        CharacterLiteral* clAST= parseCharacterLiteral();
-        finish(expressionPos);
-        expressionAST = new CharacterExpression(clAST, expressionPos);
-      }
-      break;
+  case Token::CHARLITERAL:
+  {
+    CharacterLiteral* clAST= parseCharacterLiteral();
+    finish(expressionPos);
+    expressionAST = new CharacterExpression(clAST, expressionPos);
+  }
+  break;
 
   case Token::STRINGLITERAL:
   {
@@ -488,67 +486,72 @@ Expression* Parser::parsePrimaryExpression() {
   }
   break;
 
-	case Token::LBRACKET:
-      {
-        acceptIt();
-        ArrayAggregate* aaAST = parseArrayAggregate();
-		accept(Token::RBRACKET);
-        finish(expressionPos);
-        expressionAST = new ArrayExpression(aaAST, expressionPos);
-      }
-      break;
+  case Token::LBRACKET:
+  {
+    acceptIt();
+    ArrayAggregate* aaAST = parseArrayAggregate();
+    accept(Token::RBRACKET);
+    finish(expressionPos);
+    expressionAST = new ArrayExpression(aaAST, expressionPos);
+  }
+  break;
 
-	case Token::LCURLY:
-      {
-        acceptIt();
-        RecordAggregate* raAST = parseRecordAggregate();
-		accept(Token::RCURLY);
-        finish(expressionPos);
-        expressionAST = new RecordExpression(raAST, expressionPos);
-      }
-      break;
+  case Token::LCURLY:
+  {
+    acceptIt();
+    RecordAggregate* raAST = parseRecordAggregate();
+    accept(Token::RCURLY);
+    finish(expressionPos);
+    expressionAST = new RecordExpression(raAST, expressionPos);
+  }
+  break;
 
-	case Token::IDENTIFIER:
-      {
-        Identifier* iAST= parseIdentifier();
-		if (currentToken->kind == Token::LPAREN) {
-          acceptIt();
-          ActualParameterSequence* apsAST = parseActualParameterSequence();
-		  accept(Token::RPAREN);
-          finish(expressionPos);
-          expressionAST = new CallExpression(iAST, apsAST, expressionPos);
+  case Token::IDENTIFIER:
+  {
+    Identifier* iAST= parseIdentifier();
+    if (currentToken->kind == Token::LPAREN) {
+      acceptIt();
+      ActualParameterSequence* apsAST = parseActualParameterSequence();
+      accept(Token::RPAREN);
+      finish(expressionPos);
+      expressionAST = new CallExpression(iAST, apsAST, expressionPos);
+    } else {
+      Vname* vAST = parseRestOfVname(iAST);
+      finish(expressionPos);
+      expressionAST = new VnameExpression(vAST, expressionPos);
+    }
+  }
+  break;
 
-        } else {
-          Vname* vAST = parseRestOfVname(iAST);
-          finish(expressionPos);
-          expressionAST = new VnameExpression(vAST, expressionPos);
-        }
-      }
-      break;
+  case Token::NIL:
+  {
+    acceptIt();
+    finish(expressionPos);
+    expressionAST = new NilExpression(expressionPos);
+  }
+  break;
 
-	case Token::OPERATOR:
-      {
-        Operator* opAST = parseOperator();
-        Expression* eAST = parsePrimaryExpression();
-        finish(expressionPos);
-        expressionAST = new UnaryExpression(opAST, eAST, expressionPos);
-      }
-      break;
+  case Token::OPERATOR:
+  {
+    Operator* opAST = parseOperator();
+    Expression* eAST = parsePrimaryExpression();
+    finish(expressionPos);
+    expressionAST = new UnaryExpression(opAST, eAST, expressionPos);
+  }
+  break;
 
 	case Token::LPAREN:
-      acceptIt();
-      expressionAST = parseExpression();
-	  accept(Token::RPAREN);
-      break;
+    acceptIt();
+    expressionAST = parseExpression();
+    accept(Token::RPAREN);
+    break;
 
-    default:
-      syntacticError("\"%\" cannot start an expression",
-        currentToken->spelling);
-      break;
-
-    }
-    return expressionAST;
+  default:
+    syntacticError("\"%\" cannot start an expression", currentToken->spelling);
+    break;
   }
+  return expressionAST;
+}
 
 RecordAggregate* Parser::parseRecordAggregate() {
     RecordAggregate* aggregateAST = NULL; // in case there's a syntactic error
@@ -710,6 +713,18 @@ Declaration* Parser::parseSingleDeclaration() {
     accept(Token::RPAREN);
     finish(declarationPos);
     declarationAST = new EnumDeclaration(nameAST, iASTs, declarationPos);
+  }
+  break;
+
+  case Token::REC:
+  {
+    acceptIt();
+    accept(Token::TYPE);
+    Identifier *iAST = parseIdentifier();
+    accept(Token::IS);
+    TypeDenoter *tAST = parseTypeDenoter();
+    finish(declarationPos);
+    declarationAST = new RecTypeDeclaration(iAST, tAST, declarationPos);
   }
   break;
 
@@ -995,6 +1010,7 @@ ActualParameter* Parser::parseActualParameter(){
     switch (currentToken->kind) {
 
 	case Token::IDENTIFIER:
+  case Token::NIL:
 	case Token::INTLITERAL:
 	case Token::CHARLITERAL:
 	case Token::OPERATOR:
@@ -1069,6 +1085,12 @@ TypeDenoter* Parser::parseTypeDenoter(){
           IntegerLiteral *ilAST = parseIntegerLiteral();
           finish(typePos);
           typeAST = new StringTypeDenoter(ilAST, typePos);
+          break;
+        }
+        if (iAST->spelling == "String")
+        {
+          finish(typePos);
+          // TODO ADD VAR LENGTH STRING
           break;
         }
 

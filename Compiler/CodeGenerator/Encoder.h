@@ -64,6 +64,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitEmptyExpression(Object* obj, Object* o) ;
   Object* visitIfExpression(Object* obj, Object* o);
   Object* visitIntegerExpression(Object* obj, Object* o);
+  Object* visitNilExpression(Object* obj, Object* o);
   Object* visitStringExpression(Object* obj, Object* o);
   Object* visitLetExpression(Object* obj, Object* o);
   Object* visitRecordExpression(Object* obj, Object* o);
@@ -79,7 +80,8 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
-  Object* visitProcDeclaration(Object* obj, Object* o) ;
+  Object* visitProcDeclaration(Object* obj, Object* o);
+  Object* visitRecTypeDeclaration(Object* obj, Object* o);
   Object* visitSequentialDeclaration(Object* obj, Object* o);
   Object* visitTypeDeclaration(Object* obj, Object* o);
   Object* visitUnaryOperatorDeclaration(Object* obj,Object* o);
@@ -123,6 +125,8 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitCharTypeDenoter(Object* obj, Object* o);
   Object* visitEnumTypeDenoter(Object* obj, Object* o);
   Object* visitErrorTypeDenoter(Object* obj, Object* o);
+  Object* visitNilTypeDenoter(Object* obj, Object* o);
+  Object* visitPointerTypeDenoter(Object* obj, Object* o);
   Object* visitSimpleTypeDenoter(Object* obj,Object* o);
   Object* visitStringTypeDenoter(Object* obj,Object* o);
   Object* visitIntTypeDenoter(Object* obj, Object* o);
@@ -227,20 +231,20 @@ vector<ResultParameterInfo *> parameterEntries;
 };
 
 Object* Encoder::visitAssignCommand(Object* obj, Object* o) {
-	AssignCommand* ast = (AssignCommand*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize = (Integer*) ast->E->visit(this, frame);
-    encodeStore(ast->V, new Frame(frame, valSize->value),valSize->value);
-    return NULL;
-  }
+  AssignCommand* ast = (AssignCommand*)obj;
+  Frame* frame = (Frame*) o;
+  Integer* valSize = (Integer*) ast->E->visit(this, frame);
+  encodeStore(ast->V, new Frame(frame, valSize->value),valSize->value);
+  return NULL;
+}
 
 Object* Encoder::visitCallCommand(Object* obj, Object* o) {
-	CallCommand* ast = (CallCommand*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* argsSize = (Integer*) ast->APS->visit(this, frame);
-    ast->I->visit(this, new Frame(frame->level, argsSize));
-    return NULL;
-  }
+  CallCommand* ast = (CallCommand*)obj;
+  Frame* frame = (Frame*) o;
+  Integer* argsSize = (Integer*) ast->APS->visit(this, frame);
+  ast->I->visit(this, new Frame(frame->level, argsSize));
+  return NULL;
+}
 
 Object* Encoder::visitCaseCommand(Object* obj, Object* o)
 {
@@ -259,7 +263,7 @@ Object* Encoder::visitCaseCommand(Object* obj, Object* o)
     // Load the integer literal
     emit(mach->LOADLop, 0, 0, atoi(ast->I[i]->spelling.c_str()));
     // Size of integers to be compared
-    emit(mach->LOADLop, 0, 0, 1);
+    emit(mach->LOADLop, 0, 0, mach->integerSize);
     // Compare the 2 values
     emit(mach->CALLop, mach->LBr, mach->PBr, mach->eqDisplacement);
     thisAddr = nextInstrAddr;
@@ -461,6 +465,13 @@ Object* Encoder::visitIntegerExpression(Object* obj, Object* o) {
   Integer* valSize = (Integer*) ast->type->visit(this, NULL);
   emit(mach->LOADLop, 0, 0, atoi(ast->IL->spelling.c_str()));
   return valSize;
+}
+
+Object* Encoder::visitNilExpression(Object* obj, Object* o)
+{
+  // TODO - May want to load an address instead of an int
+  emit(mach->LOADLop, 0, 0, 0);
+  return new Integer(mach->integerSize);
 }
 
 Object* Encoder::visitStringExpression(Object* obj, Object* o)
@@ -697,41 +708,50 @@ Object* Encoder::visitProcDeclaration(Object* obj, Object* o) {
   return new Integer(0);
 }
 
-Object* Encoder::visitSequentialDeclaration(Object* obj, Object* o) {
-	SequentialDeclaration* ast=(SequentialDeclaration*)obj;
-    Frame* frame = (Frame*) o;
-    int extraSize1;
-	int extraSize2;
+Object* Encoder::visitRecTypeDeclaration(Object* obj, Object* o)
+{
+  RecTypeDeclaration *ast = (RecTypeDeclaration *)obj;
 
-    extraSize1 = ((Integer*) ast->D1->visit(this, frame))->value;
-    Frame* frame1 = new Frame (frame, extraSize1);
-    extraSize2 = ((Integer*) ast->D2->visit(this, frame1))->value;
-    return new Integer(extraSize1 + extraSize2);
-  }
+  ast->T = (TypeDenoter *)ast->T->visit(this, NULL);
+
+  return new Integer(0);
+}
+
+Object* Encoder::visitSequentialDeclaration(Object* obj, Object* o) {
+  SequentialDeclaration* ast=(SequentialDeclaration*)obj;
+  Frame* frame = (Frame*) o;
+  int extraSize1;
+  int extraSize2;
+
+  extraSize1 = ((Integer*) ast->D1->visit(this, frame))->value;
+  Frame* frame1 = new Frame (frame, extraSize1);
+  extraSize2 = ((Integer*) ast->D2->visit(this, frame1))->value;
+  return new Integer(extraSize1 + extraSize2);
+}
 
 Object* Encoder::visitTypeDeclaration(Object* obj, Object* o) {
-	TypeDeclaration* ast = (TypeDeclaration*)obj;
-    // just to ensure the type's representation is decided
-    ast->T->visit(this, NULL);
-    return new Integer(0);
-  }
+  TypeDeclaration* ast = (TypeDeclaration*)obj;
+  // just to ensure the type's representation is decided
+  ast->T->visit(this, NULL);
+  return new Integer(0);
+}
 
 Object* Encoder::visitUnaryOperatorDeclaration(Object* obj,Object* o) {
-	UnaryOperatorDeclaration* ast = (UnaryOperatorDeclaration*)obj;
-    return new Integer(0);
-	}
+  UnaryOperatorDeclaration* ast = (UnaryOperatorDeclaration*)obj;
+  return new Integer(0);
+}
 
 Object* Encoder::visitVarDeclaration(Object* obj, Object* o) {
-	VarDeclaration* ast = (VarDeclaration*)obj;
-    Frame* frame = (Frame*) o;
-    int extraSize;
+  VarDeclaration* ast = (VarDeclaration*)obj;
+  Frame* frame = (Frame*) o;
+  int extraSize;
 
-    extraSize = ((Integer*) ast->T->visit(this, NULL))->value;
-	emit(mach->PUSHop, 0, 0, extraSize);
-	ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
-    writeTableDetails(ast);
-    return new Integer(extraSize);
-  }
+  extraSize = ((Integer*) ast->T->visit(this, NULL))->value;
+  emit(mach->PUSHop, 0, 0, extraSize);
+  ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
+  writeTableDetails(ast);
+  return new Integer(extraSize);
+}
 
 Object* Encoder::visitVarInitDeclaration(Object* obj, Object* o)
 {
@@ -991,6 +1011,15 @@ Object* Encoder::visitErrorTypeDenoter(Object* obj, Object* o) {
   return new Integer(0);
 }
 
+Object* Encoder::visitNilTypeDenoter(Object* obj, Object* o)
+{
+  return new Integer(mach->addressSize);
+}
+Object* Encoder::visitPointerTypeDenoter(Object* obj, Object* o)
+{
+  return new Integer(mach->addressSize);
+}
+
 Object* Encoder::visitSimpleTypeDenoter(Object* obj,Object* o) {
   SimpleTypeDenoter* ast = (SimpleTypeDenoter*)obj;
   return new Integer(0);
@@ -1138,7 +1167,7 @@ Object* Encoder::visitDotVname(Object* obj, Object* o) {
   Frame* frame = (Frame*) o;
   RuntimeEntity* baseObject = (RuntimeEntity*) ast->V->visit(this, frame);
   ast->offset = ast->V->offset + ((Field*) ast->I->decl->entity)->fieldOffset;
-                  // I.decl points to the appropriate record field
+  // I.decl points to the appropriate record field
   ast->indexed = ast->V->indexed;
   return baseObject;
 }

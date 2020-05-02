@@ -10,7 +10,7 @@ using namespace std;
 
 class EnumTypeDenoter : public TypeDenoter 
 {
-public:
+	public:
 	EnumTypeDenoter (SourcePosition* thePosition):TypeDenoter(thePosition){};
 
 	Object* visit (Visitor* v, Object* o) {
