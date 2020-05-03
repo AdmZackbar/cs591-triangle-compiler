@@ -464,7 +464,7 @@ void Interpreter::callPrimitive (int primitiveDisplacement) {
       else if(primitiveDisplacement ==  mach->putintDisplacement){
         ST = ST - 1;
         accumulator = *(data+ST);
-        printf("%d",accumulator);
+        printf("%d",(int)accumulator);
         }
       else if(primitiveDisplacement ==  mach->newDisplacement){
         size = *(data+ST - 1);

@@ -40,6 +40,7 @@ public:
   CharacterLiteral* parseCharacterLiteral();
   StringLiteral* parseStringLiteral();
   Identifier* parseIdentifier();
+  Identifier* parsePackageIdentifier(Identifier *I);
   Operator* parseOperator();
   Command* parseCommand();
   Command* parseSingleCommand();
@@ -210,10 +211,24 @@ Identifier* Parser::parseIdentifier(){
     string spelling = currentToken->spelling;
     I = new Identifier(spelling, previousTokenPosition);
     currentToken = lexicalAnalyser->scan();
+    while (check(Token::DOLLAR))
+      I = parsePackageIdentifier(I);
   } else {
     I = NULL;
     syntacticError("identifier expected here", "");
   }
+  return I;
+}
+
+Identifier* Parser::parsePackageIdentifier(Identifier *I)
+{
+  // Scan next token(after $)
+  currentToken = lexicalAnalyser->scan();
+  previousTokenPosition = currentToken->position;
+  string spelling = currentToken->spelling;
+  I = new PackageIdentifier(I, spelling, previousTokenPosition);
+  currentToken = lexicalAnalyser->scan();
+
   return I;
 }
 
@@ -523,6 +538,24 @@ Expression* Parser::parsePrimaryExpression() {
   }
   break;
 
+  case Token::PRED:
+  {
+    acceptIt();
+    Expression *eAST = parsePrimaryExpression();
+    finish(expressionPos);
+    expressionAST = new PredExpression(eAST, expressionPos);
+  }
+  break;
+
+  case Token::SUCC:
+  {
+    acceptIt();
+    Expression *eAST = parsePrimaryExpression();
+    finish(expressionPos);
+    expressionAST = new SuccExpression(eAST, expressionPos);
+  }
+  break;
+
   case Token::NIL:
   {
     acceptIt();
@@ -612,23 +645,17 @@ Vname* Parser::parseRestOfVname(Identifier* identifierAST){
   vnamePos = identifierAST->position;
   Vname* vAST = new SimpleVname(identifierAST, vnamePos);
 
-	while (check(Token::DOT) || check(Token::LBRACKET) || check(Token::DOLLAR)) {
+	while (check(Token::DOT) || check(Token::LBRACKET)) {
 		if (check(Token::DOT)) {
       acceptIt();
       Identifier* iAST = parseIdentifier();
       vAST = new DotVname(vAST, iAST, vnamePos);
-    } else if (check(Token::LBRACKET)) {
+    } else {
       acceptIt();
       Expression* eAST = parseExpression();
 		  accept(Token::RBRACKET);
       finish(vnamePos);
       vAST = new SubscriptVname(vAST, eAST, vnamePos);
-    }
-    else
-    {
-      acceptIt();
-      Identifier* iAST = parseIdentifier();
-      vAST = new PackageVname(vAST, iAST, vnamePos);
     }
   }
   return vAST;
@@ -1011,6 +1038,8 @@ ActualParameter* Parser::parseActualParameter(){
 
 	case Token::IDENTIFIER:
   case Token::NIL:
+  case Token::SUCC:
+  case Token::PRED:
 	case Token::INTLITERAL:
 	case Token::CHARLITERAL:
 	case Token::OPERATOR:
@@ -1069,65 +1098,65 @@ ActualParameter* Parser::parseActualParameter(){
 ///////////////////////////////////////////////////////////////////////////////
 
 TypeDenoter* Parser::parseTypeDenoter(){
-    TypeDenoter* typeAST = NULL; // in case there's a syntactic error
-    SourcePosition* typePos = new SourcePosition();
+  TypeDenoter* typeAST = NULL; // in case there's a syntactic error
+  SourcePosition* typePos = new SourcePosition();
 
-    start(typePos);
+  start(typePos);
 
-    switch (currentToken->kind) {
+  switch (currentToken->kind) {
 
-	case Token::IDENTIFIER:
-      {
-        Identifier* iAST = parseIdentifier();
+  case Token::IDENTIFIER:
+  {
+    Identifier* iAST = parseIdentifier();
 
-        if (iAST->spelling == "string")
-        {
-          IntegerLiteral *ilAST = parseIntegerLiteral();
-          finish(typePos);
-          typeAST = new StringTypeDenoter(ilAST, typePos);
-          break;
-        }
-        if (iAST->spelling == "String")
-        {
-          finish(typePos);
-          // TODO ADD VAR LENGTH STRING
-          break;
-        }
-
-        finish(typePos);
-        typeAST = new SimpleTypeDenoter(iAST, typePos);
-      }
+    if (iAST->spelling == "string")
+    {
+      IntegerLiteral *ilAST = parseIntegerLiteral();
+      finish(typePos);
+      typeAST = new StringTypeDenoter(ilAST, typePos);
       break;
+    }
+    if (iAST->spelling == "String")
+    {
+      finish(typePos);
+      // TODO ADD VAR LENGTH STRING
+      break;
+    }
+
+    finish(typePos);
+    typeAST = new SimpleTypeDenoter(iAST, typePos);
+  }
+  break;
 
 	case Token::ARRAY:
-      {
-        acceptIt();
-        IntegerLiteral* ilAST = parseIntegerLiteral();
-		accept(Token::OF);
-        TypeDenoter* tAST = parseTypeDenoter();
-        finish(typePos);
-        typeAST = new ArrayTypeDenoter(ilAST, tAST, typePos);
-      }
-      break;
+  {
+    acceptIt();
+    IntegerLiteral* ilAST = parseIntegerLiteral();
+    accept(Token::OF);
+    TypeDenoter* tAST = parseTypeDenoter();
+    finish(typePos);
+    typeAST = new ArrayTypeDenoter(ilAST, tAST, typePos);
+  }
+  break;
 
 	case Token::RECORD:
-      {
-        acceptIt();
-        FieldTypeDenoter* fAST = parseFieldTypeDenoter();
-		accept(Token::END);
-        finish(typePos);
-        typeAST = new RecordTypeDenoter(fAST, typePos);
-      }
-      break;
-
-    default:
-      syntacticError("\"%\" cannot start a type denoter",
-        currentToken->spelling);
-      break;
-
-    }
-    return typeAST;
+  {
+    acceptIt();
+    FieldTypeDenoter* fAST = parseFieldTypeDenoter();
+    accept(Token::END);
+    finish(typePos);
+    typeAST = new RecordTypeDenoter(fAST, typePos);
   }
+  break;
+
+  default:
+    syntacticError("\"%\" cannot start a type denoter",
+      currentToken->spelling);
+    break;
+
+  }
+  return typeAST;
+}
 
 FieldTypeDenoter* Parser::parseFieldTypeDenoter() {
     FieldTypeDenoter* fieldAST = NULL; // in case there's a syntactic error

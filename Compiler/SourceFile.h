@@ -12,8 +12,8 @@ class SourceFile {
 	int currentLine;
 
 	public:
-		static const char EOL = '\n';
-		static const char EOT = EOF;
+	static const char EOL = '\n';
+	static const char EOT = EOF;
 
 	SourceFile(string filename);
 	char getSource();
@@ -22,12 +22,10 @@ class SourceFile {
 
 
 SourceFile::SourceFile(string filename){
-	
 	sourceFile = fopen( filename.c_str(), "r" );
-
 	if( sourceFile == NULL ) {
-			printf("<%s> could not be opened.\n",filename);
-			exit(1);
+		printf("<%s> could not be opened.\n", filename.c_str());
+		exit(1);
 	}
 	currentLine = 1;
 }

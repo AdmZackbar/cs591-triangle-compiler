@@ -2,7 +2,7 @@
 #define _FuncUnaryOpDeclaration
 
 #include "./AST/Operator.h"
-#include "./AST/VarFormalParameter.h"
+#include "./AST/ConstFormalParameter.h"
 #include "./AST/UnaryOperatorDeclaration.h"
 #include "./AST/Declaration.h"
 #include "./AST/Identifier.h"
@@ -16,7 +16,7 @@ class FuncUnaryOpDeclaration : public Declaration
 {
 public:
 	Operator *O;
-	VarFormalParameter *P1;
+	ConstFormalParameter *P1;
 	UnaryOperatorDeclaration *D;
 	TypeDenoter *T;
 	Expression* E;
@@ -24,7 +24,7 @@ public:
 	FuncUnaryOpDeclaration (Operator *opAST, Identifier* i1AST, TypeDenoter* t1AST, TypeDenoter* t2AST, Expression* eAST, SourcePosition* thePosition) : Declaration(thePosition) 
 	{
 		O = opAST;
-		P1 = new VarFormalParameter(i1AST, t1AST, thePosition);
+		P1 = new ConstFormalParameter(i1AST, t1AST, thePosition);
 		D = new UnaryOperatorDeclaration(opAST, t1AST, t2AST, thePosition);
 		T = t2AST;
 		E = eAST;

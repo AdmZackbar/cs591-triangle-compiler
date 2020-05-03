@@ -40,8 +40,10 @@ public:
   Object* visitIntegerExpression(Object* obj, Object* o);
   Object* visitLetExpression(Object* obj, Object* o);
   Object* visitNilExpression(Object* obj, Object* o);
+  Object* visitPredExpression(Object* obj, Object* o);
   Object* visitRecordExpression(Object* obj, Object* o);
   Object* visitStringExpression(Object* obj, Object* o);
+  Object* visitSuccExpression(Object* obj, Object* o);
   Object* visitUnaryExpression(Object* obj, Object* o);
   Object* visitVnameExpression(Object* obj, Object* o) ;
 
@@ -115,8 +117,9 @@ public:
   Object* visitSingleFieldTypeDenoter(Object* obj, Object* o);
 
   // Literals, Identifiers and Operators
-  Object* visitCharacterLiteral(Object* obj, Object* o) ;
-  Object* visitIdentifier(Object* obj, Object* o) ;
+  Object* visitCharacterLiteral(Object* obj, Object* o);
+  Object* visitIdentifier(Object* obj, Object* o);
+  Object* visitPackageIdentifier(Object* obj, Object* o);
   Object* visitIntegerLiteral(Object* obj, Object* o);
   Object* visitOperator(Object* obj, Object* o);
   Object* visitStringLiteral(Object* obj, Object* o);
@@ -143,7 +146,6 @@ public:
   // given object.
 
   Object* visitDotVname(Object* obj, Object* o);
-  Object* visitPackageVname(Object* obj, Object* o);
   Object* visitSimpleVname(Object* obj, Object* o);
   Object* visitSubscriptVname(Object* obj, Object* o);
 
@@ -270,11 +272,22 @@ Object* Checker::visitCaseCommand(Object* obj, Object* o)
     reporter->reportError("Integer expression expected here", "", ast->E->position);
   ast->elseC->visit(this, NULL);
   
-  // TODO - enforce distinct literals
+  vector<int> usedIntegers;
+  int lit;
   for (int i=0; i<ast->I.size(); i++)
   {
+    lit = atoi(ast->I[i]->spelling.c_str());
+    for (int i=0; i<usedIntegers.size(); i++)
+    {
+      if (usedIntegers[i] == lit)
+      {
+        reporter->reportError("Duplicate integer literals found", "", ast->I[i]->position);
+        break;
+      }
+    }
     ast->I[i]->visit(this, NULL);
     ast->C[i]->visit(this, NULL);
+    usedIntegers.push_back(lit);
   }
 
   return NULL;
@@ -291,6 +304,7 @@ Object* Checker::visitForCommand(Object* obj, Object* o)
   printdetails(obj);
   ForCommand *ast = (ForCommand *)obj;
 
+  idTable->openScope();
   ast->D->visit(this, NULL);
 
   TypeDenoter *eType = (TypeDenoter *)ast->D->E->visit(this, NULL);
@@ -301,6 +315,7 @@ Object* Checker::visitForCommand(Object* obj, Object* o)
     reporter->reportError("Integer expression expected here", "", ast->E->position);
   
   ast->C->visit(this, NULL);
+  idTable->closeScope();
 
   return NULL;
 }
@@ -492,6 +507,18 @@ Object* Checker::visitNilExpression(Object* obj, Object* o)
   return ast->type;
 }
 
+Object* Checker::visitPredExpression(Object* obj, Object* o)
+{
+  PredExpression *ast = (PredExpression *)obj;
+
+  ast->type = (TypeDenoter *)ast->E->visit(this, NULL);
+
+  if (!ast->type->equals(getvariables->integerType))
+    reporter->reportError("Integer expression expected here", "", ast->E->position);
+  
+  return ast->type;
+}
+
 Object* Checker::visitRecordExpression(Object* obj, Object* o) {
 	printdetails(obj);
 	RecordExpression* ast = (RecordExpression*)obj;
@@ -506,6 +533,18 @@ Object* Checker::visitStringExpression(Object* obj, Object* o)
 
   ast->type = (StringTypeDenoter *)ast->SL->visit(this, NULL);
 
+  return ast->type;
+}
+
+Object* Checker::visitSuccExpression(Object* obj, Object* o)
+{
+  SuccExpression *ast = (SuccExpression *)obj;
+
+  ast->type = (TypeDenoter *)ast->E->visit(this, NULL);
+
+  if (!ast->type->equals(getvariables->integerType))
+    reporter->reportError("Integer expression expected here", "", ast->E->position);
+  
   return ast->type;
 }
 
@@ -649,11 +688,11 @@ Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
   PackageDeclaration *ast = (PackageDeclaration *)obj;
   IdentificationTable *oldTable = idTable;
   idTable = new IdentificationTable();
+  establishStdEnvironment();
 
   ast->D1->visit(this, NULL);
   ast->Table = idTable;
 
-  // Make sure to reset the idTable to the main one
   idTable = oldTable;
 
   return NULL;
@@ -682,7 +721,7 @@ Object* Checker::visitRecTypeDeclaration(Object* obj, Object* o)
   if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
   
-  PointerTypeDenoter *type = new PointerTypeDenoter(dummyPos);;
+  PointerTypeDenoter *type = new PointerTypeDenoter(dummyPos);
   TypeDenoter *childType = ast->T;
   ast->T = type;
   childType = (TypeDenoter *) childType->visit(this, NULL);
@@ -1168,6 +1207,15 @@ Object* Checker::visitIdentifier(Object* obj, Object* o) {
   return binding;
 }
 
+Object* Checker::visitPackageIdentifier(Object* obj, Object* o)
+{
+  PackageIdentifier *I = (PackageIdentifier *)obj;
+  PackageDeclaration *packageBinding = (PackageDeclaration *)I->P->visit(this, NULL);
+  Declaration *binding = packageBinding->Table->retrieve(I->spelling);
+  I->decl = binding;
+  return binding;
+}
+
 Object* Checker::visitIntegerLiteral(Object* obj, Object* o) {
   printdetails(obj);
   IntegerLiteral* IL = (IntegerLiteral*)obj;
@@ -1230,7 +1278,7 @@ Object* Checker::visitDotVname(Object* obj, Object* o) {
   }
   return ast->type;
 }
-
+/*
 Object* Checker::visitPackageVname(Object* obj, Object* o)
 {
   PackageVname *ast = (PackageVname *)obj;
@@ -1255,6 +1303,7 @@ Object* Checker::visitPackageVname(Object* obj, Object* o)
 
   return ast->type;
 }
+*/
 
 Object* Checker::visitSimpleVname(Object* obj, Object* o) {
 	printdetails(obj);

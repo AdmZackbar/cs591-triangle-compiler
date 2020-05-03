@@ -1,4 +1,6 @@
 ./Output
 *.tam
 *.xml
-
+tc
+td
+ti

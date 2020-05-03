@@ -65,7 +65,9 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitIfExpression(Object* obj, Object* o);
   Object* visitIntegerExpression(Object* obj, Object* o);
   Object* visitNilExpression(Object* obj, Object* o);
+  Object* visitPredExpression(Object* obj, Object* o);
   Object* visitStringExpression(Object* obj, Object* o);
+  Object* visitSuccExpression(Object* obj, Object* o);
   Object* visitLetExpression(Object* obj, Object* o);
   Object* visitRecordExpression(Object* obj, Object* o);
   Object* visitUnaryExpression(Object* obj, Object* o);
@@ -80,6 +82,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitFuncBinOpDeclaration(Object* obj, Object* o);
   Object* visitFuncDeclaration(Object* obj, Object* o);
   Object* visitFuncUnaryOpDeclaration(Object* obj, Object* o);
+  Object* visitPackageDeclaration(Object* obj, Object* o);
   Object* visitProcDeclaration(Object* obj, Object* o);
   Object* visitRecTypeDeclaration(Object* obj, Object* o);
   Object* visitSequentialDeclaration(Object* obj, Object* o);
@@ -137,6 +140,7 @@ vector<ResultParameterInfo *> parameterEntries;
   // Literals, Identifiers and Operators
   Object* visitCharacterLiteral(Object* obj, Object* o);
   Object* visitIdentifier(Object* obj, Object* o);
+  Object* visitPackageIdentifier(Object* obj, Object* o);
   Object* visitIntegerLiteral(Object* obj, Object* o);
   Object* visitOperator(Object* obj, Object* o);
   Object* visitStringLiteral(Object* obj, Object* o);
@@ -302,19 +306,19 @@ Object* Encoder::visitForCommand(Object* obj, Object* o)
   int loopAddr, endAddr;
 
   // Initialize I to E1
-  int extraSize = ((Integer*) ast->E->visit(this, frame))->value;
+  emit(mach->PUSHop, 0, 0, mach->integerSize);
+  int extraSize = ((Integer*) ast->D->E->visit(this, frame))->value;
   UnknownValue *iVal = new UnknownValue(extraSize, frame->level, frame->size);
   ast->D->entity = iVal;
   Frame *newFrame = new Frame(frame, extraSize);
   // Allocate space and store E1 into I
-  emit(mach->PUSHop, 0, 0, iVal->size);
   emit(mach->STOREop, iVal->size, displayRegister(frame->level, iVal->address->level), iVal->address->displacement);
 
   loopAddr = nextInstrAddr;
   emit(mach->LOADop, iVal->size, displayRegister(frame->level, iVal->address->level), iVal->address->displacement);
   ast->E->visit(this, frame);
   // Exit loop when I > E2
-  emit(mach->CALLop, mach->LBr, mach->PBr, mach->leDisplacement);
+  emit(mach->CALLop, mach->SBr, mach->PBr, mach->leDisplacement);
   endAddr = nextInstrAddr;
   emit(mach->JUMPIFop, mach->falseRep, mach->CBr, 0);
   ast->C->visit(this, newFrame);
@@ -326,7 +330,7 @@ Object* Encoder::visitForCommand(Object* obj, Object* o)
   emit(mach->JUMPop, 0, mach->CBr, loopAddr);
   patch(endAddr, nextInstrAddr);
 
-  emit(mach->POPop, 0, 0, iVal->size);
+  emit(mach->POPop, 0, 0, mach->integerSize);
 
   return NULL;
 }
@@ -474,6 +478,16 @@ Object* Encoder::visitNilExpression(Object* obj, Object* o)
   return new Integer(mach->integerSize);
 }
 
+Object* Encoder::visitPredExpression(Object* obj, Object* o)
+{
+  PredExpression *ast = (PredExpression *)obj;
+
+  Integer *size = (Integer *)ast->E->visit(this, o);
+  emit(mach->CALLop, mach->SBr, mach->PBr, mach->predDisplacement);
+
+  return size;
+}
+
 Object* Encoder::visitStringExpression(Object* obj, Object* o)
 {
   StringExpression *ast = (StringExpression *)obj;
@@ -486,6 +500,16 @@ Object* Encoder::visitStringExpression(Object* obj, Object* o)
     emit(mach->LOADLop, 0, 0, ch);
   }
   return stringSize;
+}
+
+Object* Encoder::visitSuccExpression(Object* obj, Object* o)
+{
+  SuccExpression *ast = (SuccExpression *)obj;
+
+  Integer *size = (Integer *)ast->E->visit(this, o);
+  emit(mach->CALLop, mach->SBr, mach->PBr, mach->succDisplacement);
+
+  return size;
 }
 
 Object* Encoder::visitLetExpression(Object* obj, Object* o) {
@@ -648,6 +672,17 @@ Object* Encoder::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
   patch(jumpAddr, nextInstrAddr);
 
   return new Integer(0);
+}
+
+Object* Encoder::visitPackageDeclaration(Object* obj, Object* o)
+{
+  PackageDeclaration *ast = (PackageDeclaration *)obj;
+  Frame *frame = (Frame *)o;
+  int size = 0;
+
+  size += ((Integer *)ast->D1->visit(this, frame))->value;
+
+  return new Integer(size);
 }
 
 Object* Encoder::visitProcDeclaration(Object* obj, Object* o) {
@@ -1119,6 +1154,11 @@ Object* Encoder::visitIdentifier(Object* obj, Object* o) {
     emit(mach->LOADLop, 0, 0, frame->size / 2);
     emit(mach->CALLop, mach->SBr, mach->PBr, displacement);
   }
+  return NULL;
+}
+
+Object* Encoder::visitPackageIdentifier(Object* obj, Object* o)
+{
   return NULL;
 }
 

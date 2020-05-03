@@ -26,8 +26,10 @@ public:
 	virtual Object* visitIntegerExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitLetExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitNilExpression(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitPredExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitRecordExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitStringExpression(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitSuccExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitUnaryExpression(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitVnameExpression(Object* ast, Object* o){ return NULL; }
 	
@@ -98,13 +100,13 @@ public:
 	// Literals, Identifiers and Operators
 	virtual Object* visitCharacterLiteral(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIdentifier(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitPackageIdentifier(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntegerLiteral(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitOperator(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitStringLiteral(Object* ast, Object* o){ return NULL; }
 	
 	// Value-or-variable names
 	virtual Object* visitDotVname(Object* ast, Object* o){ return NULL; }
-	virtual Object* visitPackageVname(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSimpleVname(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSubscriptVname(Object* ast, Object* o){ return NULL; }
 	
