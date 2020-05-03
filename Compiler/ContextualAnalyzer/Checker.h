@@ -198,6 +198,7 @@ public:
 
    
    void establishStdEnvironment();
+   void addStdEnvVars();
 
 
 
@@ -688,12 +689,13 @@ Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
   PackageDeclaration *ast = (PackageDeclaration *)obj;
   IdentificationTable *oldTable = idTable;
   idTable = new IdentificationTable();
-  establishStdEnvironment();
+  addStdEnvVars();
 
   ast->D1->visit(this, NULL);
   ast->Table = idTable;
 
   idTable = oldTable;
+  idTable->enter(ast->I->spelling, ast);
 
   return NULL;
 }
@@ -1211,6 +1213,8 @@ Object* Checker::visitPackageIdentifier(Object* obj, Object* o)
 {
   PackageIdentifier *I = (PackageIdentifier *)obj;
   PackageDeclaration *packageBinding = (PackageDeclaration *)I->P->visit(this, NULL);
+  if (!packageBinding)
+    reporter->reportError("Could not find package name", "", I->position);
   Declaration *binding = packageBinding->Table->retrieve(I->spelling);
   I->decl = binding;
   return binding;
@@ -1407,6 +1411,7 @@ Checker::Checker(ErrorReporter* reporter) {
 	this->getvariables= new StdEnvironment();
 
   establishStdEnvironment();
+  addStdEnvVars();
 }
 
 
@@ -1451,7 +1456,7 @@ TypeDeclaration* Checker::declareStdType(string id, TypeDenoter* typedenoter) {
     TypeDeclaration* binding;
 
     binding = new TypeDeclaration(new Identifier(id, dummyPos), typedenoter, dummyPos);
-    idTable->enter(id, binding);
+    //idTable->enter(id, binding);
     return binding;
   }
 
@@ -1467,7 +1472,7 @@ ConstDeclaration* Checker::declareStdConst (string id, TypeDenoter* constType) {
     constExpr = new IntegerExpression(NULL, dummyPos);
     constExpr->type = constType;
     binding = new ConstDeclaration(new Identifier(id, dummyPos), constExpr, dummyPos);
-    idTable->enter(id, binding);
+    //idTable->enter(id, binding);
     return binding;
   }
 
@@ -1479,7 +1484,7 @@ ProcDeclaration* Checker::declareStdProc (string id, FormalParameterSequence* fp
     ProcDeclaration* binding;
 
     binding = new ProcDeclaration(new Identifier(id, dummyPos), fps,new EmptyCommand(dummyPos), dummyPos);
-    idTable->enter(id, binding);
+    //idTable->enter(id, binding);
     return binding;
   }
 
@@ -1492,7 +1497,7 @@ FuncDeclaration* Checker::declareStdFunc (string id, FormalParameterSequence* fp
 
     binding = new FuncDeclaration(new Identifier(id, dummyPos), fps, resultType,
 									new EmptyExpression(dummyPos), dummyPos);
-    idTable->enter(id, binding);
+    //idTable->enter(id, binding);
     return binding;
   }
 
@@ -1505,7 +1510,7 @@ UnaryOperatorDeclaration* Checker::declareStdUnaryOp(string op, TypeDenoter* arg
     UnaryOperatorDeclaration* binding;
 
     binding = new UnaryOperatorDeclaration (new Operator(op, dummyPos),argType, resultType, dummyPos);
-    idTable->enter(op, binding);
+    //idTable->enter(op, binding);
     return binding;
   }
 
@@ -1519,7 +1524,7 @@ BinaryOperatorDeclaration* Checker::declareStdBinaryOp(string op, TypeDenoter* a
 
     binding = new BinaryOperatorDeclaration (new Operator(op, dummyPos),
                                              arg1Type, arg2type, resultType, dummyPos);
-    idTable->enter(op, binding);
+    //idTable->enter(op, binding);
     return binding;
   }
 
@@ -1581,6 +1586,40 @@ void Checker::establishStdEnvironment () {
   getvariables->puteolDecl = declareStdProc("puteol", new EmptyFormalParameterSequence(dummyPos));
   getvariables->equalDecl = declareStdBinaryOp("=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
   getvariables->unequalDecl = declareStdBinaryOp("\\=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
+}
+
+void Checker::addStdEnvVars()
+{
+  idTable->enter("Boolean", getvariables->booleanDecl);
+  idTable->enter("Integer", getvariables->integerDecl);
+  idTable->enter("Char", getvariables->charDecl);
+  idTable->enter("false", getvariables->falseDecl);
+  idTable->enter("true", getvariables->trueDecl);
+  idTable->enter("\\", getvariables->notDecl);
+  idTable->enter("/\\", getvariables->andDecl);
+  idTable->enter("\\/", getvariables->ordDecl);
+  idTable->enter("maxint", getvariables->maxintDecl);
+  idTable->enter("+", getvariables->addDecl);
+  idTable->enter("-", getvariables->subtractDecl);
+  idTable->enter("*", getvariables->multiplyDecl);
+  idTable->enter("/", getvariables->divideDecl);
+  idTable->enter("//", getvariables->moduloDecl);
+  idTable->enter("<", getvariables->lessDecl);
+  idTable->enter("<=", getvariables->notgreaterDecl);
+  idTable->enter(">", getvariables->greaterDecl);
+  idTable->enter(">=", getvariables->notlessDecl);
+  idTable->enter("chr", getvariables->chrDecl);
+  idTable->enter("ord", getvariables->ordDecl);
+  idTable->enter("eof", getvariables->eofDecl);
+  idTable->enter("eol", getvariables->eolDecl);
+  idTable->enter("get", getvariables->getDecl);
+  idTable->enter("put", getvariables->putDecl);
+  idTable->enter("getint", getvariables->getintDecl);
+  idTable->enter("putint", getvariables->putintDecl);
+  idTable->enter("geteol", getvariables->geteolDecl);
+  idTable->enter("puteol", getvariables->puteolDecl);
+  idTable->enter("=", getvariables->equalDecl);
+  idTable->enter("\\=", getvariables->unequalDecl);
 }
 
 

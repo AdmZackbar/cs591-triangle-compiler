@@ -1,3 +1,4 @@
+! 9.14a
 let
     package Graphics ~
         type Point ~
@@ -11,5 +12,8 @@ let
     var z: Graphics$Point
 in begin
     z := Graphics$cart(3,4);
-    Graphics$movehoriz(7, z);
+    putint(z.h);
+    puteol();
+    Graphics$movehoriz(7, var z);
+    putint(z.h);
 end

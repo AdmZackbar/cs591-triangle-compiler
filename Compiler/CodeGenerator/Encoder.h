@@ -1159,6 +1159,9 @@ Object* Encoder::visitIdentifier(Object* obj, Object* o) {
 
 Object* Encoder::visitPackageIdentifier(Object* obj, Object* o)
 {
+  // Handling of PackageIdentifiers at this stage is identical to Identifiers
+  visitIdentifier(obj, o);
+
   return NULL;
 }
 
