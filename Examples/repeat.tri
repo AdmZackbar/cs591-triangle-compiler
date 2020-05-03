@@ -1,11 +1,19 @@
 let var i:Integer
 in begin
     i := 0;
-    repeat
-        begin
-            putint(i);
-            i := i + 1
-        end
-    until i > 5;
-    putint(i)
+    ! Repeat will loop until the expression is true
+    repeat begin
+        putint(i);
+        puteol();
+        i := i + 1
+    end until i >= 5;
+    putint(i);
+    puteol();
+    puteol();
+    ! Show that the body will execute even if the condition is true initially
+    repeat begin
+        putint(i);
+        puteol();
+        i := i + 1
+    end until i > 0;
 end

@@ -1,0 +1,8 @@
+let
+    var x: Integer
+in begin
+    case x of
+        0: put('a');
+        0: put('b');
+        else: put('-');
+end

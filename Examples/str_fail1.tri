@@ -1,0 +1,9 @@
+let
+    var x := "hi";
+    var y := "hello"
+in
+    ! strings of differing lengths cannot be compared(or assigned)
+    if x = y then
+        put('y')
+    else
+        put('n')

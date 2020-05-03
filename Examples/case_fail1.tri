@@ -1,0 +1,9 @@
+let
+    var x: Char
+in begin
+    x := 'a';
+    ! Case statements must use integers
+    case x of
+        'a': put('a');
+        else: put('-');
+end

@@ -1,0 +1,12 @@
+! 9.11
+let
+    var x: Integer
+in begin
+    x := 0;
+    putint(x);
+    puteol();
+    putint(pred x);
+    puteol();
+    putint(succ x);
+    puteol();
+end

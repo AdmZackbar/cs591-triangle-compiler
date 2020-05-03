@@ -1,0 +1,8 @@
+let
+    var x: Integer
+in begin
+    ! Repeat expression must be a boolean
+    repeat
+        putint(x)
+    until x
+end

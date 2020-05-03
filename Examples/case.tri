@@ -1,15 +1,22 @@
-let var a:Integer
+let
+    var a: Integer;
+    proc trans (x: Integer) ~
+        case x of
+            0: put('a');
+            1: put('b');
+            2: put('c');
+            3: put('d');
+            4: put('e');
+            5: put('f');
+            6: put('g');
+            7: put('h');
+            8: put('i');
+            else: put('-')
 in begin
-    a := 7;
-    case a of
-        0: put('a');
-        1: put('b');
-        2: put('c');
-        3: put('d');
-        4: put('e');
-        5: put('f');
-        6: put('g');
-        7: put('h');
-        8: put('i');
-        else: put('-')
+    a := 0;
+    while a < 10 do begin
+        trans(a);
+        puteol();
+        a := a + 1;
+    end
 end

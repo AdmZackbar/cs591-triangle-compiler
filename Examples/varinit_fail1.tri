@@ -1,0 +1,13 @@
+let
+    var a := 1
+in begin
+    let
+        var b := 2
+    in begin
+        putint(b);
+        puteol();
+    end;
+    ! b is out of scope
+    putint(b);
+    puteol();
+end

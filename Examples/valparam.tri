@@ -1,0 +1,12 @@
+! 9.10
+let
+    var x: Integer;
+    proc f(in y: Integer, out z: Integer) ~
+        z := y + 4
+in begin
+    x := 3;
+    putint(x);
+    f(1, var x);
+    puteol();
+    putint(x);
+end

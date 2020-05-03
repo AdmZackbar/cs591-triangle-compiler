@@ -1,5 +1,14 @@
-let var a:Integer; var b:=5; var c:=3*6; var f:=true
+let
+    var a := 1;
+    var b := 'a';
+    var c := true
 in begin
-	a := b - c + 1;
-    putint(a)
+    put(b);
+    puteol();
+    putint(a);
+    puteol();
+    if c then
+        put('y')
+    else
+        put('n')
 end

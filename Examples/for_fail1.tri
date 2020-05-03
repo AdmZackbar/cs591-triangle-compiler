@@ -1,0 +1,7 @@
+let
+    var x: Boolean
+in begin
+    ! For loop requires 2 integer expressions as bounds
+    for i from 0 to x do
+        putint(i)
+end

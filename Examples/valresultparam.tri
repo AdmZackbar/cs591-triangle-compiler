@@ -1,0 +1,22 @@
+! 9.10
+let
+    var x: Integer;
+    var y: Integer;
+    proc f(in out a: Integer) ~ begin
+        a := a + 3;
+        a := x * a
+    end;
+    proc g(var b: Integer) ~ begin
+        b := b + 3;
+        b := y * b
+    end
+in begin
+    ! Shows the difference between reference and value-result params
+    x := 2;
+    y := 2;
+    f(var x);
+    putint(x);
+    puteol();
+    g(var y);
+    putint(y);
+end

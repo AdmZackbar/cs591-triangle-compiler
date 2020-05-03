@@ -1,0 +1,5 @@
+let
+    ! No null operators
+    func -- (): Integer ~ 1
+in
+    putint(--)

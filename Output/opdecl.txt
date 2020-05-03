@@ -1,0 +1,6 @@
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+25
+4
+Program has halted normally.

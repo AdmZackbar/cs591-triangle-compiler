@@ -1,0 +1,5 @@
+let
+    ! No ternary+ operators
+    func ** (x: Integer, y: Integer, z: Integer): Integer ~ 1
+in
+    putint(5 ** 1)

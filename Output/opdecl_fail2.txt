@@ -1,0 +1,3 @@
+********** Triangle Compiler (C Version 2.1) **********
+Syntactic Analysis ...
+ERROR: identifier expected here (3, 3)
