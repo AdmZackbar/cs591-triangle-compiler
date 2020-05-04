@@ -39,6 +39,7 @@ int failedInvalidInstruction;
 int failedOverflow;
 int failedZeroDivide;
 int failedIOError;
+int failedRangeCheck;
 
 long accumulator;
 Machine* mach;
@@ -92,6 +93,7 @@ failedInvalidInstruction = 4;
 failedOverflow = 5;
 failedZeroDivide = 6;
 failedIOError = 7;
+failedRangeCheck = 8;
 
 mach = new Machine();
 
@@ -268,7 +270,8 @@ void Interpreter::showStatus () {
         
       else if(status ==  failedIOError)
         printf("Program has failed due to an IO error.\n");
-        
+      else if(status == failedRangeCheck)
+        printf("Program has failed due to an invalid index(out of bounds)");
   
     if (status != halted)
       dump();
@@ -333,149 +336,155 @@ int Interpreter::readInt(){
   }
 
 void Interpreter::callPrimitive (int primitiveDisplacement) {
-    // Invokes the given primitive routine.
+  // Invokes the given primitive routine.
 	//printf("Invokes primitive parameter:%d\n",primitiveDisplacement);
-    int addr;
+  int addr;
 	int size;
-    char ch;
+  char ch;
 
-    //switch (primitiveDisplacement) {
+  //switch (primitiveDisplacement) {
 
-      if(primitiveDisplacement ==  mach->idDisplacement){
-       int nothing = 0; // nothing to be done
-	  }
-      else if(primitiveDisplacement ==  mach->notDisplacement){
-        *(data+ST - 1) = toInt(!isTrue(*(data+ST - 1)));
-	  }
-      else if(primitiveDisplacement ==  mach->andDisplacement){
-        ST = ST - 1;
-        *(data+ST - 1) = toInt(isTrue(*(data+ST - 1)) && isTrue(*(data+ST)));
-        }
-      else if(primitiveDisplacement ==  mach->orDisplacement){
-        ST = ST - 1;
-        *(data+ST - 1) = toInt(isTrue(*(data+ST - 1)) || isTrue(*(data+ST)));
-        }
-      else if(primitiveDisplacement ==  mach->succDisplacement){
-        *(data+ST - 1) = overflowChecked(*(data+ST - 1) + 1);
-        }
-      else if(primitiveDisplacement ==  mach->predDisplacement){
-        *(data+ST - 1) = overflowChecked(*(data+ST - 1) - 1);
-        }
-      else if(primitiveDisplacement ==  mach->negDisplacement){
-        *(data+ST - 1) = -(*(data+ST - 1));
-        }
-      else if(primitiveDisplacement ==  mach->addDisplacement){
-        ST = ST - 1;
-        accumulator = *(data+ST - 1);
-        *(data+ST - 1) = overflowChecked(accumulator + *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->subDisplacement){
-        ST = ST - 1;
-        accumulator = *(data+ST - 1);
-        *(data+ST - 1) = overflowChecked(accumulator - *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->multDisplacement){
-        ST = ST - 1;
-        accumulator = *(data+ST - 1);
-        *(data+ST - 1) = overflowChecked(accumulator * *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->divDisplacement){
-        ST = ST - 1;
-        accumulator = *(data+ST - 1);
-        if (*(data+ST) != 0)
-          *(data+ST - 1) = (int) (accumulator / *(data+ST));
-        else
-          status = failedZeroDivide;
-        }
-      else if(primitiveDisplacement ==  mach->modDisplacement){
-        ST = ST - 1;
-        accumulator = *(data+ST - 1);
-        if (*(data+ST) != 0)
-          *(data+ST - 1) = (int) (accumulator % *(data+ST));
-        else
-          status = failedZeroDivide;
-        }
-      else if(primitiveDisplacement ==  mach->ltDisplacement){
-        ST = ST - 1;
-        *(data+ST - 1) = toInt(*(data+ST - 1) < *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->leDisplacement){
-        ST = ST - 1;
-        *(data+ST - 1) = toInt(*(data+ST - 1) <= *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->geDisplacement){
-        ST = ST - 1;
-        *(data+ST - 1) = toInt(*(data+ST - 1) >= *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->gtDisplacement){
-        ST = ST - 1;
-        *(data+ST - 1) = toInt(*(data+ST - 1) > *(data+ST));
-        }
-      else if(primitiveDisplacement ==  mach->eqDisplacement){
-        size = *(data+ST - 1); // size of each comparand
-        ST = ST - 2 * size;
-        *(data+ST - 1) = toInt(equal(size, ST - 1, ST - 1 + size));
-        }
-      else if(primitiveDisplacement ==  mach->neDisplacement){
-        size = *(data+ST - 1); // size of each comparand
-        ST = ST - 2 * size;
-        *(data+ST - 1) = toInt(! equal(size, ST - 1, ST - 1 + size));
-        }
-      else if(primitiveDisplacement ==  mach->eolDisplacement){
-        *(data+ST) = toInt(currentChar == '\n');
-        ST = ST + 1;
-        }
-      else if(primitiveDisplacement ==  mach->eofDisplacement){
-        *(data+ST) = toInt(currentChar == -1);
-        ST = ST + 1;
-        }
-      else if(primitiveDisplacement ==  mach->getDisplacement){
-        ST = ST - 1;
-        addr = *(data+ST);
-        currentChar= cin.get();
-		//printf("\n Currently at PrimitiveDisplacement\n");
-        *(data+addr) = (int) currentChar;
-        }
-      else if(primitiveDisplacement ==  mach->putDisplacement){
-        ST = ST - 1;
-        ch = (char) *(data+ST);
-        printf("%c",ch);
-        }
-      else if(primitiveDisplacement ==  mach->geteolDisplacement){
-
-		  do {
-		 // printf("\n Currently at geteolDisplacement \n");
-		  currentChar = cin.get();
-		  }
-          while (currentChar != '\n');
-        
-        }
-      else if(primitiveDisplacement ==  mach->puteolDisplacement){
-        printf("\n");
-        }
-      else if(primitiveDisplacement ==  mach->getintDisplacement){
-
-        ST = ST - 1;
-        addr = *(data+ST);
-        
-          accumulator = readInt();
-          *(data+addr) = (int) accumulator;
-        }
-      else if(primitiveDisplacement ==  mach->putintDisplacement){
-        ST = ST - 1;
-        accumulator = *(data+ST);
-        printf("%d",(int)accumulator);
-        }
-      else if(primitiveDisplacement ==  mach->newDisplacement){
-        size = *(data+ST - 1);
-        checkSpace(size);
-        HT = HT - size;
-        *(data+ST - 1) = HT;
-        }
-      else if(primitiveDisplacement ==  mach->disposeDisplacement){
-        ST = ST - 1; // no action taken at present
-        }
+  if(primitiveDisplacement ==  mach->idDisplacement){
+    int nothing = 0; // nothing to be done
   }
+  else if(primitiveDisplacement ==  mach->notDisplacement){
+    *(data+ST - 1) = toInt(!isTrue(*(data+ST - 1)));
+  }
+  else if(primitiveDisplacement ==  mach->andDisplacement){
+    ST = ST - 1;
+    *(data+ST - 1) = toInt(isTrue(*(data+ST - 1)) && isTrue(*(data+ST)));
+  }
+  else if(primitiveDisplacement ==  mach->orDisplacement){
+    ST = ST - 1;
+    *(data+ST - 1) = toInt(isTrue(*(data+ST - 1)) || isTrue(*(data+ST)));
+  }
+  else if(primitiveDisplacement ==  mach->succDisplacement){
+    *(data+ST - 1) = overflowChecked(*(data+ST - 1) + 1);
+  }
+  else if(primitiveDisplacement ==  mach->predDisplacement){
+    *(data+ST - 1) = overflowChecked(*(data+ST - 1) - 1);
+  }
+  else if(primitiveDisplacement ==  mach->negDisplacement){
+    *(data+ST - 1) = -(*(data+ST - 1));
+  }
+  else if(primitiveDisplacement ==  mach->addDisplacement){
+    ST = ST - 1;
+    accumulator = *(data+ST - 1);
+    *(data+ST - 1) = overflowChecked(accumulator + *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->subDisplacement){
+    ST = ST - 1;
+    accumulator = *(data+ST - 1);
+    *(data+ST - 1) = overflowChecked(accumulator - *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->multDisplacement){
+    ST = ST - 1;
+    accumulator = *(data+ST - 1);
+    *(data+ST - 1) = overflowChecked(accumulator * *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->divDisplacement){
+    ST = ST - 1;
+    accumulator = *(data+ST - 1);
+    if (*(data+ST) != 0)
+      *(data+ST - 1) = (int) (accumulator / *(data+ST));
+    else
+      status = failedZeroDivide;
+  }
+  else if(primitiveDisplacement ==  mach->modDisplacement){
+    ST = ST - 1;
+    accumulator = *(data+ST - 1);
+    if (*(data+ST) != 0)
+      *(data+ST - 1) = (int) (accumulator % *(data+ST));
+    else
+      status = failedZeroDivide;
+  }
+  else if(primitiveDisplacement ==  mach->ltDisplacement){
+    ST = ST - 1;
+    *(data+ST - 1) = toInt(*(data+ST - 1) < *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->leDisplacement){
+    ST = ST - 1;
+    *(data+ST - 1) = toInt(*(data+ST - 1) <= *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->geDisplacement){
+    ST = ST - 1;
+    *(data+ST - 1) = toInt(*(data+ST - 1) >= *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->gtDisplacement){
+    ST = ST - 1;
+    *(data+ST - 1) = toInt(*(data+ST - 1) > *(data+ST));
+  }
+  else if(primitiveDisplacement ==  mach->eqDisplacement){
+    size = *(data+ST - 1); // size of each comparand
+    ST = ST - 2 * size;
+    *(data+ST - 1) = toInt(equal(size, ST - 1, ST - 1 + size));
+  }
+  else if(primitiveDisplacement ==  mach->neDisplacement){
+    size = *(data+ST - 1); // size of each comparand
+    ST = ST - 2 * size;
+    *(data+ST - 1) = toInt(! equal(size, ST - 1, ST - 1 + size));
+  }
+  else if(primitiveDisplacement ==  mach->eolDisplacement){
+    *(data+ST) = toInt(currentChar == '\n');
+    ST = ST + 1;
+  }
+  else if(primitiveDisplacement ==  mach->eofDisplacement){
+    *(data+ST) = toInt(currentChar == -1);
+    ST = ST + 1;
+  }
+  else if(primitiveDisplacement ==  mach->getDisplacement){
+    ST = ST - 1;
+    addr = *(data+ST);
+    currentChar= cin.get();
+		//printf("\n Currently at PrimitiveDisplacement\n");
+    *(data+addr) = (int) currentChar;
+  }
+  else if(primitiveDisplacement ==  mach->putDisplacement){
+    ST = ST - 1;
+    ch = (char) *(data+ST);
+    printf("%c",ch);
+  }
+  else if(primitiveDisplacement ==  mach->geteolDisplacement){
+    do {
+		  // printf("\n Currently at geteolDisplacement \n");
+		  currentChar = cin.get();
+    }
+    while (currentChar != '\n');
+  }
+  else if(primitiveDisplacement ==  mach->puteolDisplacement){
+    printf("\n");
+  }
+  else if(primitiveDisplacement ==  mach->getintDisplacement){
+
+    ST = ST - 1;
+    addr = *(data+ST);
+    
+    accumulator = readInt();
+    *(data+addr) = (int) accumulator;
+  }
+  else if(primitiveDisplacement ==  mach->putintDisplacement){
+    ST = ST - 1;
+    accumulator = *(data+ST);
+    printf("%d",(int)accumulator);
+  }
+  else if(primitiveDisplacement ==  mach->newDisplacement){
+    size = *(data+ST - 1);
+    checkSpace(size);
+    HT = HT - size;
+    *(data+ST - 1) = HT;
+  }
+  else if(primitiveDisplacement ==  mach->disposeDisplacement){
+    ST = ST - 1; // no action taken at present
+  }
+  else if (primitiveDisplacement == mach->rangecheckDisplacement)
+  {
+    ST = ST - 1;
+    if (*(data+ST-2) < *(data+ST-1) || *(data+ST-2) >= *(data+ST))
+      status = failedRangeCheck;
+    // Remove bounds but keep index
+    ST = ST - 1;
+  }
+}
 
   void Interpreter::interpretProgram() {
     // Runs the program in code store.

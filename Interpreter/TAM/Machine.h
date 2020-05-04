@@ -120,6 +120,7 @@ int maxintRep;
  int putintDisplacement;
  int newDisplacement;
  int disposeDisplacement;
+ int rangecheckDisplacement;
 
 
  Machine(){
@@ -206,34 +207,35 @@ maxintRep = 32767;
 
 // ADDRESSES OF PRIMITIVE ROUTINES
 
- idDisplacement = 1;
- notDisplacement = 2;
- andDisplacement = 3;
- orDisplacement = 4;
- succDisplacement = 5;
- predDisplacement = 6;
- negDisplacement = 7;
- addDisplacement = 8;
- subDisplacement = 9;
- multDisplacement = 10;
- divDisplacement = 11;
- modDisplacement = 12;
- ltDisplacement = 13;
- leDisplacement = 14;
- geDisplacement = 15;
- gtDisplacement = 16;
- eqDisplacement = 17;
- neDisplacement = 18;
- eolDisplacement = 19;
- eofDisplacement = 20;
- getDisplacement = 21;
- putDisplacement = 22;
- geteolDisplacement = 23;
- puteolDisplacement = 24;
- getintDisplacement = 25;
- putintDisplacement = 26;
- newDisplacement = 27;
- disposeDisplacement = 28;
+  idDisplacement = 1;
+  notDisplacement = 2;
+  andDisplacement = 3;
+  orDisplacement = 4;
+  succDisplacement = 5;
+  predDisplacement = 6;
+  negDisplacement = 7;
+  addDisplacement = 8;
+  subDisplacement = 9;
+  multDisplacement = 10;
+  divDisplacement = 11;
+  modDisplacement = 12;
+  ltDisplacement = 13;
+  leDisplacement = 14;
+  geDisplacement = 15;
+  gtDisplacement = 16;
+  eqDisplacement = 17;
+  neDisplacement = 18;
+  eolDisplacement = 19;
+  eofDisplacement = 20;
+  getDisplacement = 21;
+  putDisplacement = 22;
+  geteolDisplacement = 23;
+  puteolDisplacement = 24;
+  getintDisplacement = 25;
+  putintDisplacement = 26;
+  newDisplacement = 27;
+  disposeDisplacement = 28;
+  rangecheckDisplacement = 29;
  
  
  

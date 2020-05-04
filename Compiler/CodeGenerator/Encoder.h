@@ -1293,6 +1293,11 @@ Object* Encoder::visitSubscriptVname(Object* obj, Object* o) {
       frame->size = frame->size + mach->integerSize;
     indexSize = ((Integer*) ast->E->visit(this, frame))->value;
 
+    // 9.15 Index checking
+    emit(mach->LOADLop, 0, 0, 0);
+    emit(mach->LOADLop, 0, 0, atoi(((ArrayTypeDenoter *)ast->V->type)->IL->spelling.c_str()));
+    emit(mach->CALLop, mach->SBr, mach->PBr, mach->rangecheckDisplacement);
+
     if (elemSize != 1) {
       emit(mach->LOADLop, 0, 0, elemSize);
       emit(mach->CALLop, mach->SBr, mach->PBr,mach->multDisplacement);

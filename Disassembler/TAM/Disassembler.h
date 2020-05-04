@@ -222,6 +222,9 @@ public:
       else if(d == mach->disposeDisplacement){
 		printf("dispose ");
 		}
+      else if(d == mach->rangecheckDisplacement){
+		printf("rangecheck");
+		}
   }
 
   /**

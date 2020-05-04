@@ -120,6 +120,7 @@ int maxintRep;
  int putintDisplacement;
  int newDisplacement;
  int disposeDisplacement;
+ int rangecheckDisplacement;
 
 
  Machine(){
@@ -234,6 +235,7 @@ maxintRep = 32767;
  putintDisplacement = 26;
  newDisplacement = 27;
  disposeDisplacement = 28;
+ rangecheckDisplacement = 29;
  
 
  for (int a = 0; a < 1024; a++)
