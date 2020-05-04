@@ -680,6 +680,7 @@ Object* Encoder::visitPackageDeclaration(Object* obj, Object* o)
   Frame *frame = (Frame *)o;
   int size = 0;
 
+  size += ((Integer *)ast->D2->visit(this, frame))->value;
   size += ((Integer *)ast->D1->visit(this, frame))->value;
 
   return new Integer(size);

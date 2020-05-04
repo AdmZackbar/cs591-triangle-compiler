@@ -202,7 +202,9 @@ public:
 
 
 
- Identifier* dummyI;
+  Identifier* dummyI;
+  Declaration *currentPackage;
+  bool currentVis;
 
   
 
@@ -592,7 +594,7 @@ Object* Checker::visitConstDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	ConstDeclaration* ast = (ConstDeclaration*)obj;
   TypeDenoter* eType = (TypeDenoter*) ast->E->visit(this, NULL);
-  idTable->enter(ast->I->spelling, ast);
+  idTable->enter(ast->I->spelling, ast, currentVis, currentPackage);
 
   if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -604,11 +606,11 @@ Object* Checker::visitEnumDeclaration(Object* obj, Object* o)
 {
   EnumDeclaration *ast = (EnumDeclaration *)obj;
 
-  idTable->enter(ast->EnumName->spelling, ast);
+  idTable->enter(ast->EnumName->spelling, ast, currentVis, currentPackage);
   for (int i=0; i<ast->I.size(); i++)
   {
     ast->I[i]->decl = new EnumValueDeclaration(ast->I[i], i+1, ast, ast->position);
-    idTable->enter(ast->I[i]->spelling, (Declaration *)ast->I[i]->decl);
+    idTable->enter(ast->I[i]->spelling, (Declaration *)ast->I[i]->decl, currentVis, currentPackage);
   }
 
   return NULL;
@@ -626,7 +628,7 @@ Object* Checker::visitFuncBinOpDeclaration(Object* obj, Object* o)
   ast->D->ARG1 = (TypeDenoter*) ast->D->ARG1->visit(this, NULL);
   ast->D->ARG2 = (TypeDenoter*) ast->D->ARG2->visit(this, NULL);
   ast->D->RES = (TypeDenoter*) ast->D->RES->visit(this, NULL);
-  idTable->enter (ast->O->spelling, ast->D); // permits recursion
+  idTable->enter (ast->O->spelling, ast->D, currentVis, currentPackage); // permits recursion
   if (ast->D->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->O->spelling, ast->position);
   
@@ -649,7 +651,7 @@ Object* Checker::visitFuncDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	FuncDeclaration* ast = (FuncDeclaration*)obj;
   ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-  idTable->enter (ast->I->spelling, ast); // permits recursion
+  idTable->enter (ast->I->spelling, ast, currentVis, currentPackage); // permits recursion
 
   if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -669,7 +671,7 @@ Object* Checker::visitFuncUnaryOpDeclaration(Object* obj, Object* o)
   ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
   ast->D->ARG = (TypeDenoter*) ast->D->ARG->visit(this, NULL);
   ast->D->RES = (TypeDenoter*) ast->D->RES->visit(this, NULL);
-  idTable->enter (ast->O->spelling, ast->D); // permits recursion
+  idTable->enter (ast->O->spelling, ast->D, currentVis, currentPackage); // permits recursion
   if (ast->D->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->O->spelling, ast->position);
   
@@ -691,10 +693,20 @@ Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
   idTable = new IdentificationTable();
   addStdEnvVars();
 
+  Declaration *oldPackage = currentPackage;
+  currentPackage = ast;
+  if (ast->D2)
+  {
+    currentVis = false;
+    ast->D2->visit(this, NULL);
+    currentVis = true;
+  }
+
   ast->D1->visit(this, NULL);
   ast->Table = idTable;
 
   idTable = oldTable;
+  currentPackage = oldPackage;
   idTable->enter(ast->I->spelling, ast);
 
   return NULL;
@@ -703,7 +715,7 @@ Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
 Object* Checker::visitProcDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	ProcDeclaration* ast = (ProcDeclaration*)obj;
-  idTable->enter (ast->I->spelling, ast); // permits recursion
+  idTable->enter (ast->I->spelling, ast, currentVis, currentPackage); // permits recursion
 
   if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -719,7 +731,7 @@ Object* Checker::visitProcDeclaration(Object* obj, Object* o) {
 Object* Checker::visitRecTypeDeclaration(Object* obj, Object* o)
 {
   RecTypeDeclaration *ast = (RecTypeDeclaration *)obj;
-  idTable->enter(ast->I->spelling, ast);
+  idTable->enter(ast->I->spelling, ast, currentVis, currentPackage);
   if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
   
@@ -744,7 +756,7 @@ Object* Checker::visitTypeDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	TypeDeclaration* ast = (TypeDeclaration*)obj;
   ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-  idTable->enter (ast->I->spelling, ast);
+  idTable->enter (ast->I->spelling, ast, currentVis, currentPackage);
 
 	if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -761,7 +773,7 @@ Object* Checker::visitVarDeclaration(Object* obj, Object* o) {
 	printdetails(obj);
 	VarDeclaration* ast = (VarDeclaration*)obj;
   ast->T = (TypeDenoter*) ast->T->visit(this, NULL);
-  idTable->enter (ast->I->spelling, ast);
+  idTable->enter (ast->I->spelling, ast, currentVis, currentPackage);
 
   if (ast->duplicated)
 		reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -773,7 +785,7 @@ Object* Checker::visitVarInitDeclaration(Object* obj, Object* o)
 {
 	VarInitDeclaration* ast = (VarInitDeclaration*)obj;
   ast->T = (TypeDenoter*) ast->E->visit(this, NULL);
-  idTable->enter (ast->I->spelling, ast);
+  idTable->enter (ast->I->spelling, ast, currentVis, currentPackage);
 
   if (ast->duplicated)
     reporter->reportError ("identifier \"%\" already declared",ast->I->spelling, ast->position);
@@ -1203,7 +1215,7 @@ Object* Checker::visitCharacterLiteral(Object* obj, Object* o) {
 Object* Checker::visitIdentifier(Object* obj, Object* o) {
   printdetails(obj);
   Identifier* I = (Identifier*)obj;
-  Declaration* binding = idTable->retrieve(I->spelling);
+  Declaration* binding = idTable->retrieve(I->spelling, currentPackage);
   if (binding != NULL)
     I->decl = binding;
   return binding;
@@ -1215,7 +1227,7 @@ Object* Checker::visitPackageIdentifier(Object* obj, Object* o)
   PackageDeclaration *packageBinding = (PackageDeclaration *)I->P->visit(this, NULL);
   if (!packageBinding)
     reporter->reportError("Could not find package name", "", I->position);
-  Declaration *binding = packageBinding->Table->retrieve(I->spelling);
+  Declaration *binding = packageBinding->Table->retrieve(I->spelling, currentPackage);
   I->decl = binding;
   return binding;
 }
@@ -1229,7 +1241,7 @@ Object* Checker::visitIntegerLiteral(Object* obj, Object* o) {
 Object* Checker::visitOperator(Object* obj, Object* o) {
   printdetails(obj);
   Operator* O = (Operator*)obj;
-  Declaration* binding = idTable->retrieve(O->spelling);
+  Declaration* binding = idTable->retrieve(O->spelling, currentPackage);
   if (binding != NULL)
     O->decl = binding;
   return binding;
@@ -1586,6 +1598,9 @@ void Checker::establishStdEnvironment () {
   getvariables->puteolDecl = declareStdProc("puteol", new EmptyFormalParameterSequence(dummyPos));
   getvariables->equalDecl = declareStdBinaryOp("=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
   getvariables->unequalDecl = declareStdBinaryOp("\\=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
+
+  currentPackage = NULL;
+  currentVis = true;
 }
 
 void Checker::addStdEnvVars()
