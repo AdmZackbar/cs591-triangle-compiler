@@ -10,4 +10,9 @@ in begin
         put('n');
     puteol();
     put(n[1]);
+    puteol();
+    if n << "lol" then
+        put('y')
+    else
+        put('n')
 end

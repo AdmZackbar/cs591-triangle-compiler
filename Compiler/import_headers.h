@@ -100,6 +100,7 @@
 #include "./AST/VarDeclaration.h"
 #include "./AST/VarFormalParameter.h"
 #include "./AST/VarInitDeclaration.h"
+#include "./AST/VarStringTypeDenoter.h"
 #include "./AST/VnameExpression.h"
 #include "./AST/WhileCommand.h"
 #include "ErrorReporter.h"

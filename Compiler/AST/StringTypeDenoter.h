@@ -26,9 +26,15 @@ class StringTypeDenoter: public TypeDenoter
 
     bool equals (Object *obj)
     {
+        if (obj && obj->class_type() == "VARSTRINGTYPEDENOTER")
+            return true;
         if (obj && obj->class_type() == "STRINGTYPEDENOTER")
         {
             StringTypeDenoter *ast2 = (StringTypeDenoter *)obj;
+            // If one of the string types is generic(from stdenv)
+            if (this->IL == NULL || ast2->IL == NULL)
+                return true;
+            // Ensure the string lengths are the same
             if (atoi(this->IL->spelling.c_str())==atoi(ast2->IL->spelling.c_str()))
                 return true;
         }

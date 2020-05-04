@@ -10,7 +10,7 @@ using namespace std;
 
 class PointerTypeDenoter: public TypeDenoter {
     public:
-    TypeDenoter *T;
+    TypeDenoter *childType;
     PointerTypeDenoter (SourcePosition* thePosition): TypeDenoter(thePosition) {};
     Object* visit (Visitor* v, Object* o) {
         return v->visitPointerTypeDenoter(this, o);
@@ -20,7 +20,7 @@ class PointerTypeDenoter: public TypeDenoter {
         if (obj && (obj->class_type() == "POINTERTYPEDENOTER" || obj->class_type() == "NILTYPEDENOTER"))
             return true;
         if (obj)
-            return T->equals(obj);
+            return childType->equals(obj);
         return false;
     }
 

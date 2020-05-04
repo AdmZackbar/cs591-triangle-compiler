@@ -1116,12 +1116,6 @@ TypeDenoter* Parser::parseTypeDenoter(){
       typeAST = new StringTypeDenoter(ilAST, typePos);
       break;
     }
-    if (iAST->spelling == "String")
-    {
-      finish(typePos);
-      // TODO ADD VAR LENGTH STRING
-      break;
-    }
 
     finish(typePos);
     typeAST = new SimpleTypeDenoter(iAST, typePos);

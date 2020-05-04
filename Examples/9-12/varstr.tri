@@ -1,0 +1,6 @@
+! 9.12b
+let
+    var x: String
+in begin
+    x := "temp"
+end

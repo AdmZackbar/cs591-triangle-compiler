@@ -91,6 +91,7 @@ public:
 	virtual Object* visitPointerTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitSimpleTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitStringTypeDenoter(Object* ast, Object* o){ return NULL; }
+	virtual Object* visitVarStringTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitIntTypeDenoter(Object* ast, Object* o){ return NULL; }
 	virtual Object* visitRecordTypeDenoter(Object* ast, Object* o){ return NULL; }
 	

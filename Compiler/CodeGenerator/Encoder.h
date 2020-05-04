@@ -14,11 +14,13 @@
 #include "./CodeGenerator/EqualityRoutine.h"
 #include "./CodeGenerator/Field.h"
 #include "./CodeGenerator/Frame.h"
+#include "./CodeGenerator/HeapAddress.h"
 #include "./CodeGenerator/KnownAddress.h"
 #include "./CodeGenerator/KnownRoutine.h"
 #include "./CodeGenerator/KnownValue.h"
 #include "./CodeGenerator/ObjectAddress.h"
 #include "./CodeGenerator/PrimitiveRoutine.h"
+#include "./CodeGenerator/PointerAddress.h"
 #include "./CodeGenerator/RuntimeEntity.h"
 #include "./CodeGenerator/TypeRepresentation.h"
 #include "./CodeGenerator/UnknownAddress.h"
@@ -132,6 +134,7 @@ vector<ResultParameterInfo *> parameterEntries;
   Object* visitPointerTypeDenoter(Object* obj, Object* o);
   Object* visitSimpleTypeDenoter(Object* obj,Object* o);
   Object* visitStringTypeDenoter(Object* obj,Object* o);
+  Object* visitVarStringTypeDenoter(Object* obj,Object* o);
   Object* visitIntTypeDenoter(Object* obj, Object* o);
   Object* visitRecordTypeDenoter(Object* obj, Object* o);
   Object* visitMultipleFieldTypeDenoter(Object* obj,Object* o);
@@ -423,12 +426,19 @@ Object* Encoder::visitBinaryExpression(Object* obj, Object* o) {
 
 Object* Encoder::visitCallExpression(Object* obj, Object* o) {
 	CallExpression* ast = (CallExpression*)obj;
-    Frame* frame = (Frame*) o;
-    Integer* valSize = (Integer*) ast->type->visit(this, NULL);
-    Integer* argsSize = (Integer*) ast->APS->visit(this, frame);
-    ast->I->visit(this, new Frame(frame->level, argsSize));
-    return valSize;
+  Frame* frame = (Frame*) o;
+  Integer* valSize = (Integer*) ast->type->visit(this, NULL);
+  Integer* argsSize = (Integer*) ast->APS->visit(this, frame);
+  ast->I->visit(this, new Frame(frame->level, argsSize));
+  if (ast->type->class_type() == "POINTERTYPEDENOTER")
+  {
+    int childSize = ((Integer *)((PointerTypeDenoter *) ast->type)->childType->visit(this, o))->value;
+    emit(mach->LOADLop, 0, 0, childSize);
+    emit(mach->CALLop, mach->SBr, mach->PBr, mach->newDisplacement);
+    emit(mach->STOREIop, childSize, 0, 0);
   }
+  return valSize;
+}
 
 Object* Encoder::visitCharacterExpression(Object* obj,Object* o) {
   CharacterExpression* ast = (CharacterExpression*)obj;
@@ -680,7 +690,8 @@ Object* Encoder::visitPackageDeclaration(Object* obj, Object* o)
   Frame *frame = (Frame *)o;
   int size = 0;
 
-  size += ((Integer *)ast->D2->visit(this, frame))->value;
+  if (ast->D2)
+    size += ((Integer *)ast->D2->visit(this, frame))->value;
   size += ((Integer *)ast->D1->visit(this, frame))->value;
 
   return new Integer(size);
@@ -748,7 +759,7 @@ Object* Encoder::visitRecTypeDeclaration(Object* obj, Object* o)
 {
   RecTypeDeclaration *ast = (RecTypeDeclaration *)obj;
 
-  ast->T = (TypeDenoter *)ast->T->visit(this, NULL);
+  ast->T->visit(this, NULL);
 
   return new Integer(0);
 }
@@ -784,7 +795,15 @@ Object* Encoder::visitVarDeclaration(Object* obj, Object* o) {
 
   extraSize = ((Integer*) ast->T->visit(this, NULL))->value;
   emit(mach->PUSHop, 0, 0, extraSize);
-  ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
+  if (ast->T->class_type() == "VARSTRINGTYPEDENOTER")
+    ast->entity = new HeapAddress(mach->addressSize, frame->level, frame->size);
+  else if (ast->T->class_type() == "POINTERTYPEDENOTER")
+  {
+    Integer *childSize = (Integer *)((PointerTypeDenoter *) ast->T)->childType->visit(this, o);
+    ast->entity = new PointerAddress(mach->addressSize, frame->level, frame->size, childSize->value);
+  }
+  else
+    ast->entity = new KnownAddress(mach->addressSize, frame->level, frame->size);
   writeTableDetails(ast);
   return new Integer(extraSize);
 }
@@ -841,7 +860,13 @@ Object* Encoder::visitConstFormalParameter(Object* obj, Object* o) {
 	ConstFormalParameter* ast = (ConstFormalParameter*)obj;
   Frame* frame = (Frame*) o;
   int valSize = ((Integer*) ast->T->visit(this, NULL))->value;
-  ast->entity = new UnknownValue (valSize, frame->level, -frame->size - valSize);
+  if (ast->T->class_type() == "POINTERTYPEDENOTER")
+  {
+    int childSize = ((Integer *)((PointerTypeDenoter *)ast->T)->childType->visit(this, NULL))->value;
+    ast->entity = new PointerAddress(valSize, frame->level, -frame->size-valSize, childSize);
+  }
+  else
+    ast->entity = new UnknownValue (valSize, frame->level, -frame->size - valSize);
   writeTableDetails(ast);
   return new Integer(valSize);
 }
@@ -1038,7 +1063,7 @@ Object* Encoder::visitCharTypeDenoter(Object* obj, Object* o) {
 Object* Encoder::visitEnumTypeDenoter(Object* obj, Object* o)
 {
   EnumTypeDenoter *ast = (EnumTypeDenoter *)obj;
-
+  ast->entity = new TypeRepresentation(mach->integerSize);
   return new Integer(mach->integerSize);
 }
 
@@ -1049,10 +1074,21 @@ Object* Encoder::visitErrorTypeDenoter(Object* obj, Object* o) {
 
 Object* Encoder::visitNilTypeDenoter(Object* obj, Object* o)
 {
+  NilTypeDenoter *ast = (NilTypeDenoter *)obj;
+  ast->entity = new TypeRepresentation(mach->addressSize);
   return new Integer(mach->addressSize);
 }
 Object* Encoder::visitPointerTypeDenoter(Object* obj, Object* o)
 {
+  PointerTypeDenoter *ast = (PointerTypeDenoter *)obj;
+
+  // Ensure you only visit this fully once
+  if (ast->entity == NULL)
+  {
+    ast->entity = new TypeRepresentation(mach->addressSize);
+    ast->childType->visit(this, o);
+  }
+
   return new Integer(mach->addressSize);
 }
 
@@ -1065,7 +1101,19 @@ Object* Encoder::visitStringTypeDenoter(Object* obj,Object* o)
 {
   StringTypeDenoter *ast = (StringTypeDenoter *)obj;
 
-  return new Integer(atoi(ast->IL->spelling.c_str()));
+  int size = atoi(ast->IL->spelling.c_str());
+  ast->entity = new TypeRepresentation(size);
+  return new Integer(size);
+}
+
+Object* Encoder::visitVarStringTypeDenoter(Object* obj,Object* o)
+{
+  VarStringTypeDenoter *ast = (VarStringTypeDenoter *)obj;
+
+  // Variable-length strings have a handle that consists of a length field and pointer(to a location in the heap)
+  int size = mach->integerSize+mach->addressSize;
+  ast->entity = new TypeRepresentation(size);
+  return new Integer(size);
 }
 
 Object* Encoder::visitIntTypeDenoter(Object* obj, Object* o) {
@@ -1348,6 +1396,7 @@ void Encoder::elaborateStdEnvironment() {
 	elaborateStdEqRoutine(getvarz->equalDecl, mach->eqDisplacement);
 	elaborateStdEqRoutine(getvarz->unequalDecl, mach->neDisplacement);
 	
+  //elaborateStdRoutine(getvarz->strcompDecl, 0);
   }
 
   // Saves the object program in the named file.
@@ -1442,37 +1491,46 @@ void Encoder::saveObjectProgram(string objectName) {
   // valSize is the size of the constant or variable's value.
 
 void Encoder::encodeStore(Vname* V, Frame* frame, int valSize) {
-
-    RuntimeEntity* baseObject = (RuntimeEntity*) V->visit(this, frame);
-    // If indexed = true, code will have been generated to load an index value.
-    if (valSize > 255) {
-      reporter->reportRestriction("can't store values larger than 255 words");
-      valSize = 255; // to allow code generation to continue
-    }
-	if (baseObject->class_type() == "KNOWNADDRESS") {
-      ObjectAddress* address = ((KnownAddress*) baseObject)->address;
-      if (V->indexed) {
-        emit(mach->LOADAop, 0, displayRegister(frame->level, address->level),
-             address->displacement + V->offset);
-        emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-        emit(mach->STOREIop, valSize, 0, 0);
-      } else {
-        emit(mach->STOREop, valSize, displayRegister(frame->level,
-	     address->level), address->displacement + V->offset);
-      }
-    } else if (baseObject->class_type() == "UNKNOWNADDRESS") {
-      ObjectAddress* address = ((UnknownAddress*) baseObject)->address;
-      emit(mach->LOADop, mach->addressSize, displayRegister(frame->level,
-           address->level), address->displacement);
-      if (V->indexed)
-        emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-      if (V->offset != 0) {
-        emit(mach->LOADLop, 0, 0, V->offset);
-        emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
-      }
-      emit(mach->STOREIop, valSize, 0, 0);
-    }
+  RuntimeEntity* baseObject = (RuntimeEntity*) V->visit(this, frame);
+  // If indexed = true, code will have been generated to load an index value.
+  if (valSize > 255) {
+    reporter->reportRestriction("can't store values larger than 255 words");
+    valSize = 255; // to allow code generation to continue
   }
+  if (baseObject->class_type() == "KNOWNADDRESS") {
+    ObjectAddress* address = ((KnownAddress*) baseObject)->address;
+    if (V->indexed) {
+      emit(mach->LOADAop, 0, displayRegister(frame->level, address->level), address->displacement + V->offset);
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+      emit(mach->STOREIop, valSize, 0, 0);
+    } else {
+      emit(mach->STOREop, valSize, displayRegister(frame->level, address->level), address->displacement + V->offset);
+    }
+  } else if (baseObject->class_type() == "UNKNOWNADDRESS") {
+    ObjectAddress* address = ((UnknownAddress*) baseObject)->address;
+    emit(mach->LOADop, mach->addressSize, displayRegister(frame->level, address->level), address->displacement);
+    if (V->indexed)
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+    if (V->offset != 0) {
+      emit(mach->LOADLop, 0, 0, V->offset);
+      emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
+    }
+    emit(mach->STOREIop, valSize, 0, 0);
+  } else if (baseObject->class_type() == "HEAPADDRESS") {
+    ObjectAddress* address = ((HeapAddress*) baseObject)->address;
+    // Load the length field
+    emit(mach->LOADop, mach->integerSize, displayRegister(frame->level, address->level), address->displacement);
+    emit(mach->CALLop, mach->SBr, mach->PBr, mach->newDisplacement);
+    // Store the address in the pointer field
+    emit(mach->STOREop, mach->addressSize, displayRegister(frame->level, address->level), address->displacement + 1);
+    emit(mach->LOADop, mach->addressSize, displayRegister(frame->level, address->level), address->displacement + 1);
+    emit(mach->STOREIop, 1, 0, 0);
+  } else if (baseObject->class_type() == "POINTERADDRESS") {
+    ObjectAddress* address = ((PointerAddress*) baseObject)->address;
+    emit(mach->LOADop, mach->addressSize, displayRegister(frame->level, address->level), address->displacement);
+    emit(mach->STOREIop, ((PointerAddress*) baseObject)->childSize, 0, 0);
+  }
+}
 
 // Generates code to fetch the value of a named constant or variable
 // and push it on to the stack.
@@ -1514,6 +1572,10 @@ void Encoder::encodeFetch(Vname* V, Frame* frame, int valSize)
       emit(mach->CALLop, mach->SBr, mach->PBr, mach->addDisplacement);
     }
     emit(mach->LOADIop, valSize, 0, 0);
+  } else if (baseObject->class_type() == "POINTERADDRESS") {
+    ObjectAddress* address = ((PointerAddress*) baseObject)->address;
+    emit(mach->LOADop, mach->addressSize, displayRegister(frame->level, address->level), address->displacement);
+    emit(mach->LOADIop, ((PointerAddress*) baseObject)->childSize, 0, 0);
   }
 }
 

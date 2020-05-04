@@ -1,0 +1,6 @@
+********** Triangle Compiler (C Version 2.1) **********
+Syntactic Analysis ...
+Contextual Analysis ...
+ERROR: "y" is not declared (16, 16)
+ERROR: "y" is not declared (6, 6)
+Compilation was unsuccessful.

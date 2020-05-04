@@ -20,10 +20,13 @@ public:
    TypeDenoter *nilType;
 	 TypeDenoter* anyType;
 	 TypeDenoter* errorType;
+   TypeDenoter *strType;
+   TypeDenoter *varstrType;
 
    TypeDeclaration* booleanDecl;
    TypeDeclaration* charDecl;
    TypeDeclaration* integerDecl;
+   TypeDeclaration *varstrDecl;
 
   // These are small ASTs representing "declarations" of standard entities.
 
@@ -47,6 +50,7 @@ public:
    BinaryOperatorDeclaration* notlessDecl;
    BinaryOperatorDeclaration* greaterDecl;
    BinaryOperatorDeclaration* notgreaterDecl;
+   BinaryOperatorDeclaration* strcompDecl;
 
    ProcDeclaration* getDecl;
    ProcDeclaration* putDecl;

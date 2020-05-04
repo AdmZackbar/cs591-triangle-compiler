@@ -1,0 +1,18 @@
+! 9.14
+let
+    package Graphics ~
+        type Point ~
+            record h: Integer, v: Integer
+        end;
+        func cart (x: Integer, y: Integer): Point ~
+            {h ~ x, v ~ y};
+        proc movehoriz (dist: Integer, var p: Point) ~
+            p.h := p.h + dist + x
+    where
+        var x := 1
+    end;
+    var z: Graphics$Point
+in begin
+    ! Cannot access private variables outside package
+    z := Graphics$cart(x, 1)
+end

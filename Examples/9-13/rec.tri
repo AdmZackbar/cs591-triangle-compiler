@@ -12,6 +12,6 @@ let
         else;
     var primes: IntList
 in begin
-    !primes := cons(2, cons(3, nil));
-    !putInts(primes)
+    primes := cons(2, cons(3, nil));
+    putints(primes)
 end

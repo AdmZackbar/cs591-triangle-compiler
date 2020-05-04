@@ -105,6 +105,7 @@ public:
   Object* visitAnyTypeDenoter(Object* obj, Object* o);
   Object* visitArrayTypeDenoter(Object* obj, Object* o);
   Object* visitStringTypeDenoter(Object* obj, Object* o);
+  Object* visitVarStringTypeDenoter(Object* obj, Object* o);
   Object* visitBoolTypeDenoter(Object* obj, Object* o);
   Object* visitCharTypeDenoter(Object* obj, Object* o);
   Object* visitErrorTypeDenoter(Object* obj, Object* o);
@@ -203,7 +204,9 @@ public:
 
 
   Identifier* dummyI;
+  // The package that the checker is currently in
   Declaration *currentPackage;
+  // The visibility of the declarations that will be declared (true - public, false - private)
   bool currentVis;
 
   
@@ -236,7 +239,7 @@ Object* Checker::visitAssignCommand(Object* obj, Object* o) {
   TypeDenoter* eType = (TypeDenoter*)ast->E->visit(this, NULL);
   if (!ast->V->variable)
     reporter->reportError("LHS of assignment is not a variable", "", ast->V->position);
-  if (! eType->equals(vType))
+  if (!eType->equals(vType))
     reporter->reportError ("assignment incompatibilty", "", ast->position);
   return NULL;
 }
@@ -690,11 +693,13 @@ Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
 {
   PackageDeclaration *ast = (PackageDeclaration *)obj;
   IdentificationTable *oldTable = idTable;
+  // Set up a new table for this package (with only the std environment variables)
   idTable = new IdentificationTable();
   addStdEnvVars();
 
   Declaration *oldPackage = currentPackage;
   currentPackage = ast;
+  // Visit all the private declarations first so they can be used later in the package
   if (ast->D2)
   {
     currentVis = false;
@@ -705,6 +710,7 @@ Object* Checker::visitPackageDeclaration(Object* obj, Object* o)
   ast->D1->visit(this, NULL);
   ast->Table = idTable;
 
+  // Reset the globals to their previous state
   idTable = oldTable;
   currentPackage = oldPackage;
   idTable->enter(ast->I->spelling, ast);
@@ -739,7 +745,7 @@ Object* Checker::visitRecTypeDeclaration(Object* obj, Object* o)
   TypeDenoter *childType = ast->T;
   ast->T = type;
   childType = (TypeDenoter *) childType->visit(this, NULL);
-  type->T = childType;
+  type->childType = childType;
 
   return NULL;
 }
@@ -1128,6 +1134,11 @@ Object* Checker::visitStringTypeDenoter(Object* obj, Object* o)
   return ast;
 }
 
+Object* Checker::visitVarStringTypeDenoter(Object* obj, Object* o)
+{
+  return getvariables->varstrType;
+}
+
 Object* Checker::visitBoolTypeDenoter(Object* obj, Object* o) {
   printdetails(obj);
   BoolTypeDenoter* ast = (BoolTypeDenoter*)obj;
@@ -1283,7 +1294,7 @@ Object* Checker::visitDotVname(Object* obj, Object* o) {
   ast->type = NULL;
   TypeDenoter* vType = (TypeDenoter*) ast->V->visit(this, NULL);
   if (vType->class_type() == "POINTERTYPEDENOTER")
-    vType = ((PointerTypeDenoter *)vType)->T;
+    vType = ((PointerTypeDenoter *)vType)->childType;
   ast->variable = ast->V->variable;
   if (! (vType->class_type() == "RECORDTYPEDENOTER"))
     reporter->reportError ("record expected here", "", ast->V->position);
@@ -1531,14 +1542,12 @@ UnaryOperatorDeclaration* Checker::declareStdUnaryOp(string op, TypeDenoter* arg
   // This "declaration" summarises the operator's type info.
 
 BinaryOperatorDeclaration* Checker::declareStdBinaryOp(string op, TypeDenoter* arg1Type, TypeDenoter* arg2type, TypeDenoter* resultType) {
+  BinaryOperatorDeclaration* binding;
 
-    BinaryOperatorDeclaration* binding;
-
-    binding = new BinaryOperatorDeclaration (new Operator(op, dummyPos),
-                                             arg1Type, arg2type, resultType, dummyPos);
-    //idTable->enter(op, binding);
-    return binding;
-  }
+  binding = new BinaryOperatorDeclaration (new Operator(op, dummyPos), arg1Type, arg2type, resultType, dummyPos);
+  //idTable->enter(op, binding);
+  return binding;
+}
 
   // Creates small ASTs to represent the standard types.
   // Creates small ASTs to represent "declarations" of standard types,
@@ -1559,6 +1568,8 @@ void Checker::establishStdEnvironment () {
   getvariables->anyType = new AnyTypeDenoter(dummyPos);
   getvariables->errorType = new ErrorTypeDenoter(dummyPos);
   getvariables->nilType = new NilTypeDenoter(dummyPos);
+  //getvariables->strType = new StringTypeDenoter(NULL, dummyPos);
+  getvariables->varstrType = new VarStringTypeDenoter(dummyPos);
 
   getvariables->booleanDecl = declareStdType("Boolean", getvariables->booleanType);
   getvariables->falseDecl = declareStdConst("false", getvariables->booleanType);
@@ -1599,6 +1610,9 @@ void Checker::establishStdEnvironment () {
   getvariables->equalDecl = declareStdBinaryOp("=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
   getvariables->unequalDecl = declareStdBinaryOp("\\=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
 
+  getvariables->varstrDecl = declareStdType("String", getvariables->varstrType);
+  //getvariables->strcompDecl = declareStdBinaryOp("<<", getvariables->strType, getvariables->strType, getvariables->booleanType);
+
   currentPackage = NULL;
   currentVis = true;
 }
@@ -1608,6 +1622,7 @@ void Checker::addStdEnvVars()
   idTable->enter("Boolean", getvariables->booleanDecl);
   idTable->enter("Integer", getvariables->integerDecl);
   idTable->enter("Char", getvariables->charDecl);
+  idTable->enter("String", getvariables->varstrDecl);
   idTable->enter("false", getvariables->falseDecl);
   idTable->enter("true", getvariables->trueDecl);
   idTable->enter("\\", getvariables->notDecl);
@@ -1635,6 +1650,7 @@ void Checker::addStdEnvVars()
   idTable->enter("puteol", getvariables->puteolDecl);
   idTable->enter("=", getvariables->equalDecl);
   idTable->enter("\\=", getvariables->unequalDecl);
+  //idTable->enter("<<", getvariables->strcompDecl);
 }
 
 

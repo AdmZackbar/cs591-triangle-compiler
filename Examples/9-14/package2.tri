@@ -1,0 +1,28 @@
+! 9.14
+let
+    package Graphics ~
+        ! Can nest packages
+        package Data ~
+            type Point ~
+                record h: Integer, v: Integer
+            end;
+            const one ~ 1
+        ! Don't need private section
+        end;
+        func cart (x: Integer, y: Integer): Data$Point ~
+            {h ~ x, v ~ y};
+        proc movehoriz (dist: Integer, var p: Data$Point) ~
+            p.h := p.h + dist + x
+    where
+        var x := 1
+    end;
+    var z: Graphics$Data$Point
+in begin
+    z := Graphics$cart(3,4);
+    putint(z.h);
+    puteol();
+    Graphics$movehoriz(7, var z);
+    putint(z.h);
+    puteol();
+    putint(Graphics$Data$one);
+end
