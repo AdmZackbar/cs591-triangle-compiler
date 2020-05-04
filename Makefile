@@ -1,4 +1,5 @@
 CC = g++
+FLAGS = -std=c++11
 EXECS = tc td ti
 EXAMPLEDIR = ./Examples
 RESULTDIR = ./Output/Results
@@ -7,13 +8,13 @@ RESULTDIR = ./Output/Results
 all: $(EXECS)
 
 tc : ./Compiler/main.cpp
-	$(CC) ./Compiler/main.cpp -I ./Compiler -g -o tc
+	$(CC) ./Compiler/main.cpp -I ./Compiler $(FLAGS) -o tc
 
 td : ./Disassembler/main.cpp
-	$(CC) ./Disassembler/main.cpp -I ./Disassembler -o td
+	$(CC) ./Disassembler/main.cpp -I ./Disassembler $(FLAGS) -o td
 
 ti : ./Interpreter/main.cpp
-	$(CC) ./Interpreter/main.cpp -I ./Interpreter -o ti
+	$(CC) ./Interpreter/main.cpp -I ./Interpreter $(FLAGS) -o ti
 
 clean :
 	rm -rf $(EXECS) *.tam *.xml
