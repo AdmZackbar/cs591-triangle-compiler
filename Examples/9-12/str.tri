@@ -11,8 +11,4 @@ in begin
     puteol();
     put(n[1]);
     puteol();
-    if n << "lol" then
-        put('y')
-    else
-        put('n')
 end

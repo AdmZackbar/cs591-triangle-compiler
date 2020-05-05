@@ -415,7 +415,7 @@ Object* Checker::visitBinaryExpression(Object* obj, Object* o) {
       reporter->reportError ("\"%\" is not a binary operator",ast->O->spelling, ast->O->position);
     BinaryOperatorDeclaration* bbinding = (BinaryOperatorDeclaration*) binding;
 
-    if (bbinding->ARG1 == getvariables->anyType) {
+    if (bbinding->ARG1 == getvariables->anyType || bbinding->ARG1 == getvariables->strType) {
       // this operator must be "=" or "\="
       if (! e1Type->equals(e2Type))
         reporter->reportError ("incompatible argument types for \"%\"", ast->O->spelling, ast->position);
@@ -1568,7 +1568,7 @@ void Checker::establishStdEnvironment () {
   getvariables->anyType = new AnyTypeDenoter(dummyPos);
   getvariables->errorType = new ErrorTypeDenoter(dummyPos);
   getvariables->nilType = new NilTypeDenoter(dummyPos);
-  //getvariables->strType = new StringTypeDenoter(NULL, dummyPos);
+  getvariables->strType = new StringTypeDenoter(NULL, dummyPos);
   getvariables->varstrType = new VarStringTypeDenoter(dummyPos);
 
   getvariables->booleanDecl = declareStdType("Boolean", getvariables->booleanType);
@@ -1611,7 +1611,7 @@ void Checker::establishStdEnvironment () {
   getvariables->unequalDecl = declareStdBinaryOp("\\=", getvariables->anyType, getvariables->anyType, getvariables->booleanType);
 
   getvariables->varstrDecl = declareStdType("String", getvariables->varstrType);
-  //getvariables->strcompDecl = declareStdBinaryOp("<<", getvariables->strType, getvariables->strType, getvariables->booleanType);
+  getvariables->strcompDecl = declareStdBinaryOp("<<", getvariables->strType, getvariables->strType, getvariables->booleanType);
 
   currentPackage = NULL;
   currentVis = true;
@@ -1650,7 +1650,7 @@ void Checker::addStdEnvVars()
   idTable->enter("puteol", getvariables->puteolDecl);
   idTable->enter("=", getvariables->equalDecl);
   idTable->enter("\\=", getvariables->unequalDecl);
-  //idTable->enter("<<", getvariables->strcompDecl);
+  idTable->enter("<<", getvariables->strcompDecl);
 }
 
 

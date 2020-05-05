@@ -1,0 +1,163 @@
+./Examples/9-6/for.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+0
+1
+2
+3
+4
+5
+
+
+8
+9
+10
+11
+12
+
+Program has halted normally.
+./Examples/9-6/repeat.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+0
+1
+2
+3
+4
+5
+
+5
+
+Program has halted normally.
+./Examples/9-7/case.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+a
+b
+c
+d
+e
+f
+g
+h
+i
+-
+
+Program has halted normally.
+./Examples/9-8/varinit.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+a
+1
+y
+Program has halted normally.
+./Examples/9-9/opdecl.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+25
+4
+Program has halted normally.
+./Examples/9-10/valparam.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+3
+5
+Program has halted normally.
+./Examples/9-10/valresultparam.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+10
+25
+Program has halted normally.
+./Examples/9-11/enum.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+?
+
+Program has halted normally.
+./Examples/9-11/succpred.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+0
+-1
+1
+
+Program has halted normally.
+./Examples/9-12/str.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+y
+u
+
+Program has halted normally.
+./Examples/9-14/package.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+3
+11
+Program has halted normally.
+./Examples/9-14/package2.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+3
+11
+1
+Program has halted normally.
+./Examples/9-15/array.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+0
+10
+20
+30
+40
+50
+60
+70
+80
+90
+
+Program has halted normally.
+./Examples/9-15/array_ob.tri
+
+
+****************** TAM Interpreter (C++ Version 1.1) *******************
+
+Program has failed due to an invalid index(out of bounds)
+State of data store and registers:
+
+            |--------|          (heap is empty)
+            |////////|
+            |////////|
+      ST--> |////////|
+            |--------|
+14:      |10|
+13:      |70|
+12:      |0|
+11:      |30|
+10:      |60|
+9:      |90|
+8:      |20|
+7:      |50|
+6:      |80|
+5:      |10|
+4:      |40|
+3:      |70|
+2:      |0|
+1:      |0|
+0: SB-->|10|
+            |--------|
+

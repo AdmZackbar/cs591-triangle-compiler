@@ -1,0 +1,24 @@
+! 9.12a
+let
+    var n : string 3;
+    var x := "hello"
+in begin
+    n := "lul";
+    ! Greater
+    if n << "lol" then
+        put('y')
+    else
+        put('n');
+    puteol();
+    ! Less
+    if n << "nul" then
+        put('y')
+    else
+        put('n');
+    puteol();
+    ! Equal
+    if n << "lul" then
+        put('y')
+    else
+        put('n');
+end

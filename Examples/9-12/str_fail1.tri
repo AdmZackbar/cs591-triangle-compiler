@@ -1,9 +1,13 @@
 let
     var x := "hi";
-    var y := "hello"
-in
+    var y := "hello";
+    var b : Boolean
+in begin
     ! strings of differing lengths cannot be compared(or assigned)
     if x = y then
         put('y')
     else
-        put('n')
+        put('n');
+    b := x << y;
+    x := "henlo"
+end

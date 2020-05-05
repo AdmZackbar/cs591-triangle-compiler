@@ -1398,6 +1398,7 @@ void Encoder::elaborateStdEnvironment() {
 	elaborateStdPrimRoutine(getvarz->putintDecl, mach->putintDisplacement);
 	elaborateStdPrimRoutine(getvarz->geteolDecl, mach->geteolDisplacement);
 	elaborateStdPrimRoutine(getvarz->puteolDecl, mach->puteolDisplacement);
+  elaborateStdEqRoutine(getvarz->strcompDecl, mach->strcmpDisplacement);
 	elaborateStdEqRoutine(getvarz->equalDecl, mach->eqDisplacement);
 	elaborateStdEqRoutine(getvarz->unequalDecl, mach->neDisplacement);
 	

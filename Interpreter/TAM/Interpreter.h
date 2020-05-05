@@ -59,6 +59,7 @@ void checkSpace (int spaceNeeded);
 
 bool isTrue (int datum);
 bool equal (int size, int addr1, int addr2);
+bool lessThan (int size, int addr1, int addr2);
 
 int overflowChecked (long datum);
 
@@ -296,21 +297,37 @@ bool Interpreter::isTrue (int datum) {
   }
 
 bool Interpreter::equal (int size, int addr1, int addr2) {
-    // Tests whether two multi-word objects are equal, given their common
-    // size and their base addresses.
+  // Tests whether two multi-word objects are equal, given their common
+  // size and their base addresses.
 
-    bool eq;
-    int index;
+  bool eq;
+  int index;
 
-    eq = true;
-    index = 0;
-    while (eq && (index < size))
-      if ( *(data+addr1 + index) == *(data+addr2 + index))
-        index = index + 1;
-      else
-        eq = false;
-    return eq;
-  }
+  eq = true;
+  index = 0;
+  while (eq && (index < size))
+    if ( *(data+addr1 + index) == *(data+addr2 + index))
+      index = index + 1;
+    else
+      eq = false;
+  return eq;
+}
+
+bool Interpreter::lessThan (int size, int addr1, int addr2) {
+  // Tests whether two multi-word objects are equal, given their common
+  // size and their base addresses.
+  int index;
+
+  index = 0;
+  while (index < size)
+    if ( *(data+addr1 + index) == *(data+addr2 + index))
+      index = index + 1;
+    else if (*(data+addr1 + index) > *(data+addr2 + index))
+      return false;
+    else
+      return true;
+  return false;
+}
 
 int Interpreter::overflowChecked (long datum) {
     // Signals failure if the datum is too large to fit into a single word,
@@ -483,6 +500,11 @@ void Interpreter::callPrimitive (int primitiveDisplacement) {
       status = failedRangeCheck;
     // Remove bounds but keep index
     ST = ST - 1;
+  }
+  else if (primitiveDisplacement == mach->strcmpDisplacement) {
+    size = *(data+ST - 1); // size of each comparand
+    ST = ST - 2 * size;
+    *(data+ST - 1) = toInt(lessThan(size, ST - 1, ST - 1 + size));
   }
 }
 

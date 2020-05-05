@@ -119,6 +119,7 @@ int maxintRep;
  int newDisplacement;
  int disposeDisplacement;
  int rangecheckDisplacement;
+ int strcmpDisplacement;
 
 
  Machine(){
@@ -234,6 +235,7 @@ maxintRep = 32767;
  newDisplacement = 27;
  disposeDisplacement = 28;
  rangecheckDisplacement = 29;
+ strcmpDisplacement = 30;
  
  
  

@@ -225,6 +225,9 @@ public:
       else if(d == mach->rangecheckDisplacement){
 		printf("rangecheck");
 		}
+      else if(d == mach->strcmpDisplacement){
+		printf("strcmp  ");
+		}
   }
 
   /**
