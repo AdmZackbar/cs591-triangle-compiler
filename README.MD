@@ -19,6 +19,6 @@ Use the command 'make clean' to remove all executables and temporary files.
 
 
 PROJECT NOTES:
-I was unable to get 9.12b (Variable-length strings) and 9.13 (Recursive types) working in time.
+I was unable to finish 9.12b (Variable-length strings) and 9.13 (Recursive types) in time.
 All others should be in working order (9.6-9.14).
 One of the extra credit problems was completed (9.15).
